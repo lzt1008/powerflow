@@ -1,7 +1,6 @@
 import type { IORegistry, SMCPowerData } from '@/types'
 import type { Reactive } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { emit } from '@tauri-apps/api/event'
+import { listen } from '@tauri-apps/api/event'
 import { computed, reactive } from 'vue'
 
 interface PowerData {
@@ -71,40 +70,34 @@ const powerData: Reactive<PowerData> = reactive({
 })
 
 let count = 0
-function updateData() {
-  Promise.all([
-    invoke<SMCPowerData>('get_power').then((data) => {
-      powerData.smc = data
-    }),
-    invoke<IORegistry>('get_ioreg').then((data) => {
-      powerData.io = data
-    }),
-  ]).then(() => {
-    emit('power-updated', `${powerData.smc.systemTotal.toFixed(1)} w`)
-    count++
-    if (count === 3) {
-      count = 0
-      if (powerData.statistics.length > 20) {
-        powerData.statistics.shift()
-      }
-      const level = powerData.io.appleRawCurrentCapacity / powerData.io.appleRawMaxCapacity * 100
-      const power = powerData.smc.systemTotal
-      powerData.statistics.push({
-        'time': new Date().toLocaleTimeString(),
-        'System Power': power - power % 0.01,
-        'System In': powerData.smc.deliveryRate < 0.01 ? 0 : powerData.smc.deliveryRate,
-        'Battery Level': level - level % 0.01,
-        'Screen Power': powerData.smc.brightness || 0,
-        'Heatpipe Power': powerData.smc.heatpipe || 0,
-      })
-    }
-  })
-}
 
-updateData()
-setInterval(() => {
-  updateData()
-}, 1000)
+listen<[SMCPowerData, IORegistry]>('power-data', (event) => {
+  const [smc, io] = event.payload
+
+  powerData.smc = smc
+  powerData.io = io
+
+  count++
+  if (count === 3) {
+    count = 0
+    if (powerData.statistics.length > 20) {
+      powerData.statistics.shift()
+    }
+    const level = powerData.io.appleRawCurrentCapacity
+      / powerData.io.appleRawMaxCapacity * 100
+    const power = powerData.smc.systemTotal
+    powerData.statistics.push({
+      'time': new Date().toLocaleTimeString(),
+      'System Power': power - power % 0.01,
+      'System In': powerData.smc.deliveryRate < 0.01
+        ? 0
+        : powerData.smc.deliveryRate,
+      'Battery Level': level - level % 0.01,
+      'Screen Power': powerData.smc.brightness || 0,
+      'Heatpipe Power': powerData.smc.heatpipe || 0,
+    })
+  }
+})
 
 export function usePower() {
   return computed(() => ({
@@ -128,8 +121,8 @@ export function usePower() {
       watts: powerData.io.adapterDetails?.watts,
       name: powerData.io.adapterDetails?.name || 'Adapter',
     },
-    batteryLevel:
-      powerData.io.appleRawCurrentCapacity / powerData.io.appleRawMaxCapacity
+    batteryLevel: powerData.io.appleRawCurrentCapacity
+      / powerData.io.appleRawMaxCapacity
       * 100,
     systemPower: powerData.smc.systemTotal,
     screenPower: powerData.smc.brightness,

@@ -1,12 +1,12 @@
-use std::sync::Mutex;
+use std::time::Duration;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{ActivationPolicy, AppHandle, Listener, Manager, State};
+use tauri::{ActivationPolicy, AppHandle, Emitter, Listener, Manager};
 use tauri_plugin_positioner::{Position, WindowExt};
+use tokio::select;
 use tpower::{
-    de::IORegistry,
-    ffi::smc::{SMCConnection, SMCPowerData, SMCReadSensor},
+    ffi::smc::{SMCConnection, SMCReadSensor},
     provider::get_mac_ioreg,
 };
 
@@ -26,23 +26,30 @@ fn is_main_window_hidden(app: AppHandle) -> bool {
     !main.is_visible().unwrap()
 }
 
-#[tauri::command]
-fn get_power(state: State<Mutex<SMCConnection>>) -> SMCPowerData {
-    let mut state = state.lock().unwrap();
-    state.read_sensor()
-}
+fn start_sender(app: AppHandle) -> tokio::task::JoinHandle<()> {
+    let mut smc_conn = SMCConnection::new("AppleSMC").unwrap();
+    let mut timer = tokio::time::interval(Duration::from_secs(1));
 
-#[tauri::command]
-fn get_ioreg() -> IORegistry {
-    get_mac_ioreg().unwrap()
+    tokio::spawn(async move {
+        loop {
+            select! {
+                _ = timer.tick() => {
+                    let data = smc_conn.read_sensor();
+                    let ioreg = get_mac_ioreg().unwrap();
+                    app.emit("power-updated", format!("{:.1} w", data.system_total)).unwrap();
+                    app.emit("power-data", (data, ioreg)).unwrap();
+                }
+            }
+        }
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
-pub fn run() {
-    let smc_conn = Mutex::new(SMCConnection::new("AppleSMC").unwrap());
-
+pub async fn run() {
     tauri::Builder::default()
-        .manage(smc_conn)
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_positioner::init())
+        .invoke_handler(tauri::generate_handler![open_app, is_main_window_hidden])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
@@ -54,21 +61,14 @@ pub fn run() {
                     .unwrap();
             }
         })
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_positioner::init())
-        .invoke_handler(tauri::generate_handler![
-            get_power,
-            get_ioreg,
-            open_app,
-            is_main_window_hidden
-        ])
         .setup(|app| {
+            let _handle = start_sender(app.handle().clone());
+
             let show = MenuItemBuilder::new("Show Window").build(app)?;
 
             let quit = MenuItemBuilder::new("Quit").build(app)?;
 
             let menu = MenuBuilder::new(app.handle())
-                .separator()
                 .item(&show)
                 .separator()
                 .item(&quit)
@@ -82,8 +82,8 @@ pub fn run() {
                 .build(app)
                 .unwrap();
 
-            tray_icon.on_menu_event(move |tray_handle, event| {
-                if event.id() == show.id() {
+            tray_icon.on_menu_event(move |tray_handle, event| match event.id() {
+                val if val == show.id() => {
                     let window = tray_handle.app_handle().get_webview_window("main").unwrap();
 
                     if !window.is_visible().unwrap() {
@@ -95,6 +95,10 @@ pub fn run() {
                             .set_activation_policy(ActivationPolicy::Regular);
                     }
                 }
+                val if val == quit.id() => {
+                    tray_handle.app_handle().exit(0);
+                }
+                _ => {}
             });
 
             tray_icon.on_tray_icon_event(move |tray_handle, event| {
@@ -104,11 +108,10 @@ pub fn run() {
                     ..
                 } = event
                 {
-                    let _ = tray_handle
+                    tray_handle
                         .app_handle()
-                        .set_activation_policy(ActivationPolicy::Regular);
-
-                    // icon.app_handle().show().unwrap();
+                        .set_activation_policy(ActivationPolicy::Regular)
+                        .unwrap();
 
                     let window = tray_handle
                         .app_handle()
@@ -120,9 +123,10 @@ pub fn run() {
                     if window.is_visible().unwrap() {
                         window.hide().unwrap();
 
-                        let _ = tray_handle
+                        tray_handle
                             .app_handle()
-                            .set_activation_policy(ActivationPolicy::Accessory);
+                            .set_activation_policy(ActivationPolicy::Accessory)
+                            .unwrap();
                     } else {
                         window.show().unwrap();
                         window.set_focus().unwrap();
@@ -131,10 +135,9 @@ pub fn run() {
             });
 
             app.listen("power-updated", move |event| {
-                tray_icon.set_title(
-                    // this is a JSON String
-                    Some(event.payload().trim_matches('"')
-                )).unwrap();
+                tray_icon
+                    .set_title(Some(event.payload().trim_matches('"')))
+                    .unwrap();
             });
 
             Ok(())
