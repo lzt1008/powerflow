@@ -3,6 +3,7 @@ import Badge from '@/components/ui/badge/Badge.vue'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Progress from '@/components/ui/progress/Progress.vue'
 import { usePower } from '@/composables'
+import NumberFlow from '@number-flow/vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useWindowFocus } from '@vueuse/core'
 import { Battery, BatteryCharging, ExternalLink } from 'lucide-vue-next'
@@ -64,9 +65,10 @@ watch(focused, () => {
                   power.adapterDetails.amperage / 1000 }}A)
               </Badge>
             </div>
-            <div class="text-4xl font-bold transition-all">
+            <!-- <div class="text-4xl font-bold transition-all">
               {{ (power.isCharging ? power.systemIn : power.systemPower).toFixed(1) }}W
-            </div>
+            </div> -->
+            <NumberFlow class="text-4xl font-bold" :value="power.isCharging ? power.systemIn - power.systemIn % 0.1 : power.systemPower" suffix="w" />
           </div>
         </div>
       </CardContent>
