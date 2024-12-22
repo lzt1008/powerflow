@@ -102,6 +102,8 @@ listen<[SMCPowerData, IORegistry]>('power-data', (event) => {
 export function usePower() {
   return computed(() => ({
     statistics: powerData.statistics,
+    io: powerData.io,
+    smc: powerData.smc,
     isCharging: powerData.smc.chargingStatus === 1,
     timeRemaining: (() => {
       if (powerData.io.fullyCharged) {
@@ -128,8 +130,7 @@ export function usePower() {
     screenPower: powerData.smc.brightness,
     heatpipePower: powerData.smc.heatpipe,
     systemIn: powerData.smc?.deliveryRate || 0,
-    socPower: powerData.smc.batteryRate,
+    batteryPower: powerData.smc.batteryRate,
     powerLoss: powerData.io.powerTelemetryData.adapterEfficiencyLoss,
-    // screenPower: computed(() => powerData.smc?.deliveryRate),
   }))
 }
