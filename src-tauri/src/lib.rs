@@ -1,8 +1,12 @@
+use std::process;
 use std::time::Duration;
 
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{ActivationPolicy, AppHandle, Emitter, Listener, Manager};
+use tauri::{
+    ActivationPolicy, AppHandle, Emitter, Listener, Manager, WebviewWindow,
+    WebviewWindowBuilder, WindowEvent,
+};
 use tauri_plugin_positioner::{Position, WindowExt};
 use tokio::select;
 use tpower::{
@@ -22,13 +26,19 @@ fn open_app(app: AppHandle) {
 
 #[tauri::command]
 fn is_main_window_hidden(app: AppHandle) -> bool {
-    let main = app.get_webview_window("main").unwrap();
-    !main.is_visible().unwrap()
+    if let Some(window) = app.get_webview_window("main") {
+        match window.is_visible() {
+            Ok(visible) => !visible,
+            Err(_) => true,
+        }
+    } else {
+        false
+    }
 }
 
 fn start_sender(app: AppHandle) -> tokio::task::JoinHandle<()> {
     let mut smc_conn = SMCConnection::new("AppleSMC").unwrap();
-    let mut timer = tokio::time::interval(Duration::from_secs(1));
+    let mut timer = tokio::time::interval(Duration::from_millis(2000));
 
     tokio::spawn(async move {
         loop {
@@ -44,16 +54,42 @@ fn start_sender(app: AppHandle) -> tokio::task::JoinHandle<()> {
     })
 }
 
+trait WebviewWindowExt {
+    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)>;
+}
+
+impl WebviewWindowExt for AppHandle {
+    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)> {
+        if let Some(window) = self.get_webview_window(label) {
+            Ok((window, false))
+        } else {
+            WebviewWindowBuilder::from_config(
+                self,
+                self.config()
+                    .app
+                    .windows
+                    .iter()
+                    .find(|w| w.label == label)
+                    .unwrap(),
+            )
+            .unwrap()
+            .build()
+            .map(|window| (window, true))
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub async fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
         .invoke_handler(tauri::generate_handler![open_app, is_main_window_hidden])
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+            if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 window.hide().unwrap();
+                // window.position_
 
                 window
                     .app_handle()
@@ -65,7 +101,6 @@ pub async fn run() {
             let _handle = start_sender(app.handle().clone());
 
             let show = MenuItemBuilder::new("Show Window").build(app)?;
-
             let quit = MenuItemBuilder::new("Quit").build(app)?;
 
             let menu = MenuBuilder::new(app.handle())
@@ -84,7 +119,10 @@ pub async fn run() {
 
             tray_icon.on_menu_event(move |tray_handle, event| match event.id() {
                 val if val == show.id() => {
-                    let window = tray_handle.app_handle().get_webview_window("main").unwrap();
+                    let (window, is_new) = tray_handle
+                        .app_handle()
+                        .get_or_create_window("main")
+                        .unwrap();
 
                     if !window.is_visible().unwrap() {
                         window.show().unwrap();
@@ -96,7 +134,8 @@ pub async fn run() {
                     }
                 }
                 val if val == quit.id() => {
-                    tray_handle.app_handle().exit(0);
+                    tray_handle.app_handle().cleanup_before_exit();
+                    process::exit(0);
                 }
                 _ => {}
             });
@@ -108,26 +147,18 @@ pub async fn run() {
                     ..
                 } = event
                 {
-                    tray_handle
+                    let (window, is_new) = tray_handle
                         .app_handle()
-                        .set_activation_policy(ActivationPolicy::Regular)
+                        .get_or_create_window("popover")
                         .unwrap();
 
-                    let window = tray_handle
-                        .app_handle()
-                        .get_webview_window("popover")
-                        .unwrap();
-
-                    window.move_window(Position::TrayLeft).unwrap();
-
-                    if window.is_visible().unwrap() {
-                        window.hide().unwrap();
-
+                    if window.is_visible().unwrap() && !is_new {
+                        // window.hide().unwrap();
                         tray_handle
                             .app_handle()
-                            .set_activation_policy(ActivationPolicy::Accessory)
-                            .unwrap();
+                            .emit("hide-popover", ());
                     } else {
+                        window.move_window(Position::TrayLeft).unwrap();
                         window.show().unwrap();
                         window.set_focus().unwrap();
                     }
@@ -142,6 +173,10 @@ pub async fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running tauri application");
+
+    app.run(|app, event| if let tauri::RunEvent::ExitRequested { api, .. } = event {
+        api.prevent_exit();
+    });
 }

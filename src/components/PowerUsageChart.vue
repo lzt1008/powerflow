@@ -29,7 +29,7 @@ const categories = computed(() => {
         class="w-full h-[240px]"
         index="time"
         :y-formatter="(value) => `${value}W`"
-        :data="power.statistics.length < 2 ? [] : power.statistics"
+        :data="power.statistics?.length < 2 ? [] : (power?.statistics || [])"
         :categories
         :custom-tooltip="ChartTooltip"
       />

@@ -6,7 +6,7 @@ import TechnicalDetail from './TechnicalDetail.vue'
 </script>
 
 <template>
-  <div class="flex flex-col gap-4 min-w-min">
+  <div class="flex flex-col gap-4 min-w-min pb-2">
     <div class="flex gap-4">
       <PowerStatus />
       <PowerFlow />

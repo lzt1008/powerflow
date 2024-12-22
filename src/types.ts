@@ -37,8 +37,9 @@ export interface AdapterDetails {
   adapterVoltage: number;
   isWireless: boolean;
   watts: number;
-  name: string;
+  name?: string;
   current: number;
+  description: string;
 }
 
 export interface PowerTelemetryData {

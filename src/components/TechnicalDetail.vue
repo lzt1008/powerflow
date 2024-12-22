@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { usePower } from '@/composables';
+import { usePower } from '@/composables'
 import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
+import Skeleton from './ui/skeleton/Skeleton.vue';
 
 const power = usePower()
 </script>
@@ -16,9 +17,10 @@ const power = usePower()
         <Thermometer class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div class="text-2xl font-bold">
+        <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.smc.temperature.toFixed(1) }}°C
         </div>
+        <Skeleton v-else />
         <p class="text-xs text-muted-foreground">
           Current battery temperature
         </p>
@@ -32,9 +34,10 @@ const power = usePower()
         <Battery class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div class="text-2xl font-bold">
+        <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ (power.io.appleRawMaxCapacity / power.io.designCapacity * 100).toFixed(1) }}%
         </div>
+        <Skeleton v-else />
         <p class="text-xs text-muted-foreground">
           Maximum capacity relative to new
         </p>
@@ -48,9 +51,10 @@ const power = usePower()
         <Cpu class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div class="text-2xl font-bold">
+        <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.io.cycleCount }}
         </div>
+        <Skeleton v-else />
         <p class="text-xs text-muted-foreground">
           Total battery cycles
         </p>
@@ -64,12 +68,14 @@ const power = usePower()
         <CloudLightning class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div class="text-2xl font-bold">
+        <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.io.appleRawCurrentCapacity }}mAh
         </div>
-        <p class="text-xs text-muted-foreground">
+        <Skeleton v-else />
+        <p v-if="!power.isLoading" class="text-xs text-muted-foreground">
           Design Capacity: {{ power.io.designCapacity }}mAh
         </p>
+        <Skeleton v-else />
       </CardContent>
     </Card>
   </div>

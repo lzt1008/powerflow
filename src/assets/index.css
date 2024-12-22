@@ -86,7 +86,9 @@ body {
     @apply border-border;
   }
   body {
-    @apply text-foreground;
+    @apply bg-transparent text-foreground;
+
     -webkit-font-smoothing: antialiased;
+    overflow: hidden;
   }
 }
