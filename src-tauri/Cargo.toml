@@ -2,7 +2,7 @@
 name = "tauri-app"
 version = "0.1.0"
 description = "A Tauri App"
-authors = ["you"]
+authors = [ "you" ]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -12,18 +12,26 @@ edition = "2021"
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
 name = "tauri_app_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+crate-type = [
+  "staticlib",
+  "cdylib",
+  "rlib"
+]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build = { version = "2", features = [ "config-toml" ] }
 
 [dependencies]
-tauri = { version = "2", features = [ "macos-private-api", "tray-icon"] }
+tauri = { version = "2", features = [
+  "macos-private-api",
+  "tray-icon",
+  "config-toml"
+] }
 tauri-plugin-opener = "2"
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 tpower = { path = "../../tpower" }
-tokio = { version = "1.42.0", features = ["full"] }
+tokio = { version = "1.42.0", features = [ "full" ] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-positioner = { version = "2.0.0", features = ["tray-icon"] }
+tauri-plugin-positioner = { version = "2.0.0", features = [ "tray-icon" ] }
