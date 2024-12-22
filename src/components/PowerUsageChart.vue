@@ -1,9 +1,20 @@
 <script setup lang="ts">
+import type { StatisticData } from '@/composables'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { LineChart } from '@/components/ui/chart-line'
 import { usePower } from '@/composables'
+import { computed } from 'vue'
+import ChartTooltip from './ChartTooltip.vue'
 
 const power = usePower()
+
+const categories = computed(() => {
+  const base = ['System Power', 'Screen Power', 'Heatpipe Power'] as (keyof StatisticData)[]
+  if (power.value.isCharging) {
+    base.push('System In')
+  }
+  return base
+})
 </script>
 
 <template>
@@ -15,9 +26,12 @@ const power = usePower()
     </CardHeader>
     <CardContent>
       <LineChart
-        class="w-full h-[240px]" :data="power.statistics.length < 2 ? [] : power.statistics" index="time"
-        :categories="['System Power', 'System In', 'Screen Power', 'Heatpipe Power']"
+        class="w-full h-[240px]"
+        index="time"
         :y-formatter="(value) => `${value}W`"
+        :data="power.statistics.length < 2 ? [] : power.statistics"
+        :categories
+        :custom-tooltip="ChartTooltip"
       />
     </CardContent>
   </Card>
