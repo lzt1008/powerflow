@@ -87,5 +87,6 @@ body {
   }
   body {
     @apply text-foreground;
+    -webkit-font-smoothing: antialiased;
   }
 }
