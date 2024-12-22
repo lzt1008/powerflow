@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { usePower } from '@/composables';
 import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
+
+const power = usePower()
 </script>
 
 <template>
@@ -14,7 +17,7 @@ import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
       </CardHeader>
       <CardContent>
         <div class="text-2xl font-bold">
-          32.5°C
+          {{ power.smc.temperature.toFixed(1) }}°C
         </div>
         <p class="text-xs text-muted-foreground">
           Current battery temperature
@@ -30,7 +33,7 @@ import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
       </CardHeader>
       <CardContent>
         <div class="text-2xl font-bold">
-          98%
+          {{ (power.io.appleRawMaxCapacity / power.io.designCapacity * 100).toFixed(1) }}%
         </div>
         <p class="text-xs text-muted-foreground">
           Maximum capacity relative to new
@@ -46,7 +49,7 @@ import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
       </CardHeader>
       <CardContent>
         <div class="text-2xl font-bold">
-          142
+          {{ power.io.cycleCount }}
         </div>
         <p class="text-xs text-muted-foreground">
           Total battery cycles
@@ -62,10 +65,10 @@ import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
       </CardHeader>
       <CardContent>
         <div class="text-2xl font-bold">
-          99.6Wh
+          {{ power.io.appleRawCurrentCapacity }}mAh
         </div>
         <p class="text-xs text-muted-foreground">
-          Design Capacity: 100Wh
+          Design Capacity: {{ power.io.designCapacity }}mAh
         </p>
       </CardContent>
     </Card>
