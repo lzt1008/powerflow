@@ -28,7 +28,7 @@ onMounted(() => {
       :class="{ shadow: shouldDisplayShadow }"
     >
       <div class="flex items-center gap-3 font-mono text-sm">
-        <TabsList class="ml-[4.5rem]">
+        <TabsList class="ml-[6rem]">
           <TabsTrigger value="mac">
             <LaptopIcon class="size-4 text-green-500" />
           </TabsTrigger>

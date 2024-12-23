@@ -1,18 +1,21 @@
 use std::process;
 use std::time::Duration;
 
+use cocoa::base::id;
+use data::{start_sender, SenderMessage};
+use ext::WebviewWindowExt;
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{
-    ActivationPolicy, AppHandle, Emitter, Listener, Manager, WebviewWindow,
-    WebviewWindowBuilder, WindowEvent,
+    async_runtime, ActivationPolicy, AppHandle, Emitter, Listener, Manager, RunEvent, WindowEvent,
 };
 use tauri_plugin_positioner::{Position, WindowExt};
-use tokio::select;
-use tpower::{
-    ffi::smc::{SMCConnection, SMCReadSensor},
-    provider::get_mac_ioreg,
-};
+use tokio::sync::mpsc;
+use util::set_window_controls_pos;
+
+mod data;
+mod ext;
+mod util;
 
 #[tauri::command]
 fn open_app(app: AppHandle) {
@@ -26,57 +29,9 @@ fn open_app(app: AppHandle) {
 
 #[tauri::command]
 fn is_main_window_hidden(app: AppHandle) -> bool {
-    if let Some(window) = app.get_webview_window("main") {
-        match window.is_visible() {
-            Ok(visible) => !visible,
-            Err(_) => true,
-        }
-    } else {
-        false
-    }
-}
-
-fn start_sender(app: AppHandle) -> tokio::task::JoinHandle<()> {
-    let mut smc_conn = SMCConnection::new("AppleSMC").unwrap();
-    let mut timer = tokio::time::interval(Duration::from_millis(2000));
-
-    tokio::spawn(async move {
-        loop {
-            select! {
-                _ = timer.tick() => {
-                    let data = smc_conn.read_sensor();
-                    let ioreg = get_mac_ioreg().unwrap();
-                    app.emit("power-updated", format!("{:.1} w", data.system_total)).unwrap();
-                    app.emit("power-data", (data, ioreg)).unwrap();
-                }
-            }
-        }
-    })
-}
-
-trait WebviewWindowExt {
-    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)>;
-}
-
-impl WebviewWindowExt for AppHandle {
-    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)> {
-        if let Some(window) = self.get_webview_window(label) {
-            Ok((window, false))
-        } else {
-            WebviewWindowBuilder::from_config(
-                self,
-                self.config()
-                    .app
-                    .windows
-                    .iter()
-                    .find(|w| w.label == label)
-                    .unwrap(),
-            )
-            .unwrap()
-            .build()
-            .map(|window| (window, true))
-        }
-    }
+    app.get_webview_window("main")
+        .map(|w| w.is_visible().map(|v| !v).unwrap_or(true))
+        .unwrap_or(false)
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -84,13 +39,13 @@ pub async fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
+        .plugin(tauri_plugin_pinia::init())
         .invoke_handler(tauri::generate_handler![open_app, is_main_window_hidden])
         .on_window_event(|window, event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
-                window.hide().unwrap();
-                // window.position_
 
+                window.hide().unwrap();
                 window
                     .app_handle()
                     .set_activation_policy(ActivationPolicy::Accessory)
@@ -98,7 +53,36 @@ pub async fn run() {
             }
         })
         .setup(|app| {
-            let _handle = start_sender(app.handle().clone());
+            set_window_controls_pos(
+                app.get_webview_window("main").unwrap().ns_window().unwrap() as id,
+                22.,
+                24.,
+            );
+
+            let (sender_tx, rx) = mpsc::channel(10);
+            let _handle = start_sender(app.handle().clone(), rx);
+
+            let tx = sender_tx.clone();
+            app.listen("window:load", move |_| {
+                let tx = tx.clone();
+                async_runtime::spawn(async move {
+                    tx.send(SenderMessage::ImmediateSend).await.unwrap();
+                });
+            });
+
+            app.listen("preferences:change-interval", move |event| {
+                let tx = sender_tx.clone();
+                let interval: u64 = serde_json::from_str(event.payload()).unwrap();
+                async_runtime::spawn(async move {
+                    tx.send(SenderMessage::ChangeInterval(Duration::from_millis(
+                        interval,
+                    )))
+                    .await
+                    .unwrap();
+                });
+            });
+
+            // --------- Tray Icon ---------
 
             let show = MenuItemBuilder::new("Show Window").build(app)?;
             let quit = MenuItemBuilder::new("Quit").build(app)?;
@@ -119,7 +103,7 @@ pub async fn run() {
 
             tray_icon.on_menu_event(move |tray_handle, event| match event.id() {
                 val if val == show.id() => {
-                    let (window, is_new) = tray_handle
+                    let (window, _) = tray_handle
                         .app_handle()
                         .get_or_create_window("main")
                         .unwrap();
@@ -128,9 +112,10 @@ pub async fn run() {
                         window.show().unwrap();
                         window.set_focus().unwrap();
 
-                        let _ = tray_handle
+                        tray_handle
                             .app_handle()
-                            .set_activation_policy(ActivationPolicy::Regular);
+                            .set_activation_policy(ActivationPolicy::Regular)
+                            .unwrap();
                     }
                 }
                 val if val == quit.id() => {
@@ -153,10 +138,8 @@ pub async fn run() {
                         .unwrap();
 
                     if window.is_visible().unwrap() && !is_new {
-                        // window.hide().unwrap();
-                        tray_handle
-                            .app_handle()
-                            .emit("hide-popover", ());
+                        // let js side handle this, so we can have fade animation
+                        tray_handle.app_handle().emit("hide-popover", ()).unwrap();
                     } else {
                         window.move_window(Position::TrayLeft).unwrap();
                         window.show().unwrap();
@@ -176,7 +159,10 @@ pub async fn run() {
         .build(tauri::generate_context!())
         .expect("error while running tauri application");
 
-    app.run(|app, event| if let tauri::RunEvent::ExitRequested { api, .. } = event {
-        api.prevent_exit();
+    // prevent app from exiting when all windows are closed
+    app.run(|_app, event| {
+        if let RunEvent::ExitRequested { api, .. } = event {
+            api.prevent_exit();
+        }
     });
 }
