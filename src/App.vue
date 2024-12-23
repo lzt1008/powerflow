@@ -22,7 +22,8 @@ window.addEventListener('blur', () => {
 <template>
   <Tabs default-value="mac">
     <div
-      class="sticky top-0 flex justify-between items-center bg-background z-10 py-2 pr-4 transition-shadow"
+      data-tauri-drag-region
+      class="sticky top-0 flex justify-between items-center z-10 py-2 pr-4 transition-shadow"
       :class="{ shadow: shouldDisplayShadow }"
     >
       <div class="flex items-center gap-3 font-mono text-sm">
