@@ -5,6 +5,7 @@ import { LineChart } from '@/components/ui/chart-line'
 import { usePower } from '@/composables'
 import { computed } from 'vue'
 import ChartTooltip from './ChartTooltip.vue'
+import Skeleton from './ui/skeleton/Skeleton.vue'
 
 const power = usePower()
 
@@ -25,7 +26,9 @@ const categories = computed(() => {
       </CardTitle>
     </CardHeader>
     <CardContent>
+      <Skeleton v-if="power.isLoading" class="w-full h-[240px]" />
       <LineChart
+        v-else
         class="w-full h-[240px]"
         index="time"
         :y-formatter="(value) => `${value}W`"

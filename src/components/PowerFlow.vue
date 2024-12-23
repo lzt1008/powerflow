@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { usePower } from '@/composables/usePower'
-import { Battery, Cpu, Laptop, CloudLightningIcon as Lightning, Monitor } from 'lucide-vue-next'
 
+import { Battery, Cpu, Laptop, CloudLightningIcon as Lightning, Monitor } from 'lucide-vue-next'
 import Shimmer from './Shimmer.vue'
 import Tooltip from './Tooltip.vue'
 
@@ -21,7 +22,9 @@ const power = usePower()
       <CardTitle>Power Flow</CardTitle>
     </CardHeader>
     <CardContent>
+      <Skeleton v-if="power.isLoading" class="w-full h-[120px]" />
       <div
+        v-else
         class="flex justify-between items-center w-full rounded-lg border bg-muted/50 p-4 font-mono text-secondary-foreground text-xs"
         :class="[power.isCharging ? '' : 'flex-row-reverse']"
       >

@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePower } from '@/composables'
 import { Battery, CloudLightning, Cpu, Thermometer } from 'lucide-vue-next'
-import Skeleton from './ui/skeleton/Skeleton.vue';
+import Skeleton from './ui/skeleton/Skeleton.vue'
 
 const power = usePower()
 </script>
@@ -20,7 +20,7 @@ const power = usePower()
         <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.smc.temperature.toFixed(1) }}°C
         </div>
-        <Skeleton v-else />
+        <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
           Current battery temperature
         </p>
@@ -37,7 +37,7 @@ const power = usePower()
         <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ (power.io.appleRawMaxCapacity / power.io.designCapacity * 100).toFixed(1) }}%
         </div>
-        <Skeleton v-else />
+        <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
           Maximum capacity relative to new
         </p>
@@ -54,7 +54,7 @@ const power = usePower()
         <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.io.cycleCount }}
         </div>
-        <Skeleton v-else />
+        <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
           Total battery cycles
         </p>
@@ -71,11 +71,11 @@ const power = usePower()
         <div v-if="!power.isLoading" class="text-2xl font-bold">
           {{ power.io.appleRawCurrentCapacity }}mAh
         </div>
-        <Skeleton v-else />
-        <p v-if="!power.isLoading" class="text-xs text-muted-foreground">
-          Design Capacity: {{ power.io.designCapacity }}mAh
+        <Skeleton v-else class="w-12 h-8" />
+        <p class="flex gap-2 text-xs text-muted-foreground">
+          Design Capacity: <span v-if="!power.isLoading">{{ power.io.designCapacity }}mAh</span>
+          <Skeleton v-else class="w-12 h-4" />
         </p>
-        <Skeleton v-else />
       </CardContent>
     </Card>
   </div>
