@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaptopIcon, MobileIcon, Share2Icon } from '@radix-icons/vue'
+import { emit } from '@tauri-apps/api/event'
 import { useScroll } from '@vueuse/core'
 import { SettingsIcon } from 'lucide-vue-next'
-import { ref, watchEffect } from 'vue'
+import { onMounted, ref, watchEffect } from 'vue'
 import PowerAnalytics from './components/PowerAnalytics.vue'
 
 const shouldDisplayShadow = ref(false)
@@ -14,8 +15,8 @@ watchEffect(() => {
   shouldDisplayShadow.value = y.value > 0
 })
 
-window.addEventListener('blur', () => {
-
+onMounted(() => {
+  emit('window:load')
 })
 </script>
 
