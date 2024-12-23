@@ -1,6 +1,7 @@
 import type { IORegistry, SMCPowerData } from '@/types'
 import type { Reactive } from 'vue'
 import { listen } from '@tauri-apps/api/event'
+import { useDocumentVisibility } from '@vueuse/core'
 import { computed, reactive } from 'vue'
 
 interface RawPowerData {
@@ -54,10 +55,12 @@ listen<[SMCPowerData, IORegistry]>('power-data', (event) => {
   }
 })
 
+const vis = useDocumentVisibility()
+
 export function usePower() {
   return computed(() => ({
-    isLoading: Object.keys(powerData.smc).length === 0,
-    isReady: Object.keys(powerData.smc).length > 0,
+    isLoading: Object.keys(powerData.smc).length === 0 || vis.value === 'hidden',
+    isReady: Object.keys(powerData.smc).length > 0 && vis.value === 'visible',
     statistics: powerData.statistics,
     io: powerData.io,
     smc: powerData.smc,
