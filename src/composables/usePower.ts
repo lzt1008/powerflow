@@ -1,6 +1,6 @@
-import type { IORegistry, SMCPowerData } from '@/types'
+import type { IORegistry, SMCPowerData } from '@/bindings'
 import type { Reactive } from 'vue'
-import { listen } from '@tauri-apps/api/event'
+import { events } from '@/bindings'
 import { useDocumentVisibility } from '@vueuse/core'
 import { computed, reactive } from 'vue'
 
@@ -27,11 +27,9 @@ const powerData: Reactive<RawPowerData> = reactive({
 
 let count = 0
 
-listen<[SMCPowerData, IORegistry]>('power-data', (event) => {
-  const [smc, io] = event.payload
-
-  powerData.smc = smc
-  powerData.io = io
+events.powerTickEvent.listen(async ({ payload }) => {
+  powerData.smc = payload.smc
+  powerData.io = payload.io
 
   count++
   if (count === 3) {

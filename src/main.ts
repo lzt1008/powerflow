@@ -1,8 +1,4 @@
-import { MotionPlugin } from '@vueuse/motion'
-import { createApp } from 'vue'
 import App from './App.vue'
-import './assets/index.css'
+import { setup } from './lib/setup'
 
-createApp(App)
-  .use(MotionPlugin)
-  .mount('#app')
+setup(App)

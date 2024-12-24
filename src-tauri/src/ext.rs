@@ -1,12 +1,7 @@
-use tauri::{AppHandle, Manager, WebviewWindow, WebviewWindowBuilder};
+use tauri::{Manager, Runtime, WebviewWindow, WebviewWindowBuilder};
 
-
-pub trait WebviewWindowExt {
-    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)>;
-}
-
-impl WebviewWindowExt for AppHandle {
-    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow, bool)> {
+pub trait WebviewWindowExt<R: Runtime>: Manager<R> + Sized {
+    fn get_or_create_window(&self, label: &str) -> tauri::Result<(WebviewWindow<R>, bool)> {
         if let Some(window) = self.get_webview_window(label) {
             Ok((window, false))
         } else {
@@ -24,4 +19,19 @@ impl WebviewWindowExt for AppHandle {
             .map(|window| (window, true))
         }
     }
+
+    fn main_window(&self) -> Option<WebviewWindow<R>> {
+        self.get_webview_window("main")
+    }
+
+    fn popover_window(&self) -> Option<WebviewWindow<R>> {
+        self.get_webview_window("popover")
+    }
+
+    #[allow(dead_code)]
+    fn settings_window(&self) -> Option<WebviewWindow<R>> {
+        self.get_or_create_window("settings").ok().map(|v| v.0)
+    }
 }
+
+impl<R: Runtime, T: Manager<R> + Sized> WebviewWindowExt<R> for T {}

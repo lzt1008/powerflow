@@ -1,24 +1,31 @@
 <script setup lang="ts">
+import { events } from '@/bindings'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Progress from '@/components/ui/progress/Progress.vue'
 import { usePower } from '@/composables'
+import { usePreference } from '@/stores/preference'
 import NumberFlow from '@number-flow/vue'
 import { window } from '@tauri-apps/api'
 import { invoke } from '@tauri-apps/api/core'
-import { listen } from '@tauri-apps/api/event'
 import { useWindowFocus } from '@vueuse/core'
 import { useMotion } from '@vueuse/motion'
-import { Battery, BatteryCharging, ExternalLink } from 'lucide-vue-next'
-import { onUnmounted, ref, watch } from 'vue'
+import { addMinutes, format, formatDistanceToNow } from 'date-fns'
+import { ArrowUpDown, BatteryCharging, BatteryFull, BatteryMedium, ExternalLink } from 'lucide-vue-next'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import Skeleton from './ui/skeleton/Skeleton.vue'
 
 const showOpenLink = ref(false)
+
 const power = usePower()
 
-const focused = useWindowFocus()
+const preferenceIsLoading = ref(true)
+const preference = usePreference()
+
+preference.$tauri.start().then(() => {
+  preferenceIsLoading.value = false
+})
 
 const target = ref<HTMLElement | null>(null)
-
 const motion = useMotion(target, {
   initial: {
     opacity: 0,
@@ -38,6 +45,18 @@ const motion = useMotion(target, {
   },
 })
 
+const showRemainDuration = ref(false)
+const buttonText = computed(() => {
+  if (showRemainDuration.value) {
+    return power.value.timeRemaining
+  }
+  return format(
+    addMinutes(new Date(), power.value.io.timeRemaining),
+    'HH:mm',
+  )
+})
+
+const focused = useWindowFocus()
 watch(focused, () => {
   invoke<boolean>('is_main_window_hidden').then((res) => {
     showOpenLink.value = res
@@ -54,7 +73,7 @@ watch(focused, () => {
   }
 })
 
-const unlisten = listen('hide-popover', () => {
+const unlisten = events.hidePopoverEvent.listen(() => {
   if (window.getCurrentWindow().label !== 'popover') {
     return
   }
@@ -67,7 +86,6 @@ const unlisten = listen('hide-popover', () => {
     //   .then(w => w.find(w => w.label === 'popover')?.hide())
   }, 300)
 })
-
 onUnmounted(() => {
   unlisten.then(f => f())
 })
@@ -91,19 +109,32 @@ onUnmounted(() => {
             </a>
           </div>
 
+          <Skeleton v-if="power.isLoading" class="w-24 h-6" />
           <div
-            v-if="power.isReady"
+            v-else-if="power.isCharging"
             class="rounded-md dark:bg-green-600 bg-green-500 px-2 py-1 text-xs truncate font-mono"
           >
             <span class="font-bold mr-1 text-background">{{ power.adapterDetails.watts }}W</span>
-            <span class="text-[10px] text-background/80">({{ power.adapterDetails.voltage / 1000 }}V,{{
-              power.adapterDetails.amperage / 1000 }}A)</span>
+            <span class="text-[10px] text-background/80">({{ (power.adapterDetails?.voltage || 0) / 1000 }}V,{{
+              (power.adapterDetails?.amperage || 0) / 1000 }}A)</span>
           </div>
-          <Skeleton v-else class="w-24 h-6" />
+          <div
+            v-else
+            class="rounded-md dark:bg-green-600 bg-green-500 px-2 py-1 text-xs truncate font-mono w-20 text-background flex items-center justify-center
+            cursor-pointer hover:bg-green-600 transition-colors
+            "
+            @click="showRemainDuration = !showRemainDuration"
+          >
+            <span class="font-bold mr-1">{{ buttonText }}</span>
+            <ArrowUpDown
+              class="size-3 text-background/80 transition-transform duration-300"
+              :class="{ 'rotate-180': showRemainDuration }"
+            />
+          </div>
         </CardTitle>
         <CardDescription class="text-[10px] font-mono">
           <template v-if="power.isReady">
-            {{ power.adapterDetails.name }}
+            {{ power.isCharging ? power.adapterDetails.name : 'On Battery' }}
           </template>
           <Skeleton v-else class="w-20 h-[10px]" />
         </CardDescription>
@@ -111,20 +142,31 @@ onUnmounted(() => {
       <CardContent class="space-y-4 mt-1">
         <div class="flex flex-col gap-6">
           <div class="flex gap-2">
+            <Skeleton v-if="power.isLoading || preferenceIsLoading" class="w-40 h-[50px] mt-2" />
             <NumberFlow
-              v-if="power.isReady" class="text-4xl font-bold"
+              v-else-if="preference.animationsEnabled" class="text-4xl font-bold"
               :format="{ maximumFractionDigits: 1, minimumFractionDigits: 1 }"
               :value="power.isCharging ? power.systemIn : power.systemPower" suffix="w"
             />
-            <Skeleton v-else class="w-40 h-[50px] mt-2" />
+            <div v-else class="text-4xl leading-[54px] font-bold">
+              {{ (power.isCharging ? power.systemIn : power.systemPower).toFixed(1) }}w
+            </div>
           </div>
         </div>
 
         <div class="flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <div v-if="power.isReady" class="flex items-center gap-2">
-              <BatteryCharging v-if="power.isCharging" class="h-5 w5 text-green-500" />
-              <Battery v-else class="h-5 w-5" />
+              <BatteryCharging v-if="power.isCharging" class="size-5 text-green-500" />
+              <BatteryFull v-else-if="power.batteryLevel > 0.66" class="size-5" />
+              <BatteryMedium v-else-if="power.batteryLevel > 0.33" class="size-5" />
+              <BatteryLow
+                v-else
+                class="size-5"
+                :class="{
+                  'text-red-500': power.batteryLevel < 0.1,
+                }"
+              />
               <span class="text-xl font-bold mr-4">
                 {{ power.batteryLevel.toFixed(2) }}%</span>
             </div>
@@ -134,8 +176,12 @@ onUnmounted(() => {
               v-if="power.isReady" class="text-sm font-medium truncate"
               :class="power.isCharging ? 'text-green-500' : 'text-muted-foreground'"
             >
-              <span class="font-semibold">{{ power.isCharging ? 'Charging' : 'On Battery' }}</span>
-              • {{ power.timeRemaining }}
+              <span class="font-semibold">{{
+                formatDistanceToNow(addMinutes(new Date(), power.isCharging
+                  ? power.smc.timeToFull
+                  : power.smc.timeToEmpty,
+                )) }}</span>
+              <span> to {{ power.isCharging ? 'full' : 'empty' }}</span>
             </div>
             <Skeleton v-else class="w-32 h-5" />
           </div>

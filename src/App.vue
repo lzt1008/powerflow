@@ -1,10 +1,11 @@
 <script setup lang="ts">
+import { commands } from '@/bindings'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { LaptopIcon, MobileIcon, Share2Icon } from '@radix-icons/vue'
-import { emit } from '@tauri-apps/api/event'
 import { useScroll } from '@vueuse/core'
 import { SettingsIcon } from 'lucide-vue-next'
 import { onMounted, ref, watchEffect } from 'vue'
+import { events } from './bindings'
 import PowerAnalytics from './components/PowerAnalytics.vue'
 
 const shouldDisplayShadow = ref(false)
@@ -16,7 +17,7 @@ watchEffect(() => {
 })
 
 onMounted(() => {
-  emit('window:load')
+  events.windowLoadedEvent.emit()
 })
 </script>
 
@@ -24,7 +25,7 @@ onMounted(() => {
   <Tabs default-value="mac">
     <div
       data-tauri-drag-region
-      class="sticky top-0 flex justify-between items-center z-10 py-2 pr-4 transition-shadow"
+      class="sticky top-0 flex justify-between items-center z-10 py-2 pr-4 transition-shadow bg-background"
       :class="{ shadow: shouldDisplayShadow }"
     >
       <div class="flex items-center gap-3 font-mono text-sm">
@@ -46,7 +47,10 @@ onMounted(() => {
           <Share2Icon class="text-muted-foreground size-5" />
         </div>
         <div class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
-          <SettingsIcon class="text-muted-foreground size-5" />
+          <SettingsIcon
+            class="text-muted-foreground size-5"
+            @click="commands.openSettings()"
+          />
         </div>
       </div>
     </div>
@@ -66,5 +70,8 @@ onMounted(() => {
   </Tabs>
 </template>
 
-<style scoped>
+<style>
+body {
+  overflow: hidden;
+}
 </style>

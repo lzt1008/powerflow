@@ -33,6 +33,14 @@ transparent = true
 skipTaskbar = true
 focus = false
 
+[[app.windows]]
+label = "settings"
+url = "settings.html"
+title = "Settings"
+width = 700
+height = 800
+visible = false
+
 [app.security]
 
 [bundle]
