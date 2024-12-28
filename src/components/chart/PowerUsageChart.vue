@@ -18,7 +18,7 @@ const categories = computed(() => {
   <Card class="w-full space-y-4">
     <CardHeader class="pb-0">
       <CardTitle>
-        Power Usage
+        {{ $t('power_usage') }}
       </CardTitle>
     </CardHeader>
     <CardContent>

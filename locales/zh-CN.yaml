@@ -1,0 +1,49 @@
+system_power: 系统功率
+power_flow: 功率流
+on_battery: 使用电池
+power_usage: 电量使用情况
+temperature: 温度
+temperature_desc: 当前电池温度
+battery_health: 电池健康
+battery_health_desc: 当前电池健康状态
+cycle_count: 循环次数
+cycle_count_desc: 总循环次数
+energy: 能量
+designed_capacity: 设计容量
+status:
+  charging_power: 充电功率
+  offline: 离线
+  on_battery: 电池供电
+  system_power: 系统功率
+  to_full: 充满
+  to_empty: 耗尽
+settings:
+  appearance: 外观
+  theme: 主题
+  theme_desc: 更改应用程序的主题
+  theme_light: 浅色
+  theme_dark: 深色
+  theme_system: 跟随系统
+  language: 语言
+  language_desc: 设置应用程序的语言
+  auto: 自动
+  animations: 动画
+  animations_desc: 显示功率变化的平滑过渡效果
+  update_and_monitoring: 更新与监控
+  update_frequency: 更新频率
+  update_frequency_desc: 电力数据刷新频率
+  background_monitoring: 后台监控
+  background_monitoring_desc: 在后台运行应用程序
+  status_bar: 状态栏
+  status_bar_desc: 状态栏中显示的信息类型
+  heatpipe_power: soc功率
+  screen_power: 屏幕功率
+  system_total: 系统总功率
+  show_charging_power: 显示充电功率
+  show_charging_power_desc: 在充电时显示充电功率而非系统功率
+  about: 关于
+  build: 构建
+  license: 许可证
+  author: 作者
+  version: 版本
+

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { localeMap } from '@/lib/format'
 import { addMinutes, formatDistanceToNow } from 'date-fns'
 import { BatteryCharging, BatteryFull, BatteryLow, BatteryMedium } from 'lucide-vue-next'
 
@@ -30,9 +31,12 @@ const power = usePower()
         :class="power.isCharging ? 'text-green-500' : 'text-muted-foreground'"
       >
         <span class="font-semibold">{{
-          formatDistanceToNow(addMinutes(new Date(), power.timeRemaining))
+          formatDistanceToNow(
+            addMinutes(new Date(), power.timeRemaining),
+            { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
+          )
         }}</span>
-        <span> to {{ power.isCharging ? 'full' : 'empty' }}</span>
+        <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
       </div>
       <Skeleton v-else class="w-32 h-5" />
     </div>

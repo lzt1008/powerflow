@@ -22,7 +22,7 @@ const buttonText = computed(() => {
 
 <template>
   <div class="mr-10 flex gap-2 items-center">
-    {{ power.isCharging ? 'Charging Power' : 'System Power' }}
+    {{ power.isCharging ? $t('status.charging_power') : $t('status.system_power') }}
     <span
       v-if="power.isRemote"
       class="mr-1 size-2 rounded-full"

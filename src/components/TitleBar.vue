@@ -50,7 +50,7 @@ const {
         <Skeleton v-if="tabNameLoading" class="w-32 h-4" />
         <span v-else class="text-secondary-foreground font-bold">{{ tabName }}</span>
         <span class="text-[10px] leading-[10px] font-normal text-muted-foreground">
-          {{ tab === 'local' ? 'Local' : Array.from(data.remote[tab].interface || []).join(' and ') }}
+          {{ tab === 'local' ? 'Local' : Array.from(data.remote[tab].interface || []).join(' and ') || 'offline' }}
         </span>
       </div>
     </div>

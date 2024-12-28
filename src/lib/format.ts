@@ -1,6 +1,11 @@
 import type { ArgumentsType } from '@vueuse/core'
 import { type FormatDistanceToken, formatDistanceToNow, type Locale } from 'date-fns'
-import { enUS } from 'date-fns/locale'
+import { enUS, zhCN } from 'date-fns/locale'
+
+export const localeMap = {
+  'en': enUS,
+  'zh-CN': zhCN,
+}
 
 export const shortDistanceLocale: Locale = {
   ...enUS,

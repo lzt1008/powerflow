@@ -7,10 +7,10 @@ const rawData = usePowerRaw()
 
 <template>
   <template v-if="!power.isLoading">
-    {{ power.isCharging ? power.adapterDetails!.name : 'On Battery' }}
+    {{ power.isCharging ? power.adapterDetails!.name : $t('status.on_battery') }}
     <template v-if="!rawData.isLocal && rawData.offline">
       <span>·</span>
-      offline
+      {{ $t('status.offline') }}
     </template>
     <template v-else-if="!rawData.isLocal">
       <span>·</span>

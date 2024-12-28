@@ -1,0 +1,50 @@
+system_power: System Power
+power_flow: Power Flow
+on_battery: On Battery
+power_usage: Power Usage
+temperature: Temperature
+temperature_desc: Current battery temperature
+battery_health: Battery Health
+battery_health_desc: Current battery health
+cycle_count: Cycle Count
+cycle_count_desc: Total number of cycles
+energy: Energy
+designed_capacity: Designed Capacity
+
+status:
+  on_battery: On Battery
+  offline: offline
+  charging_power: Charging Power
+  system_power: System Power
+  to_full: to full
+  to_empty: to empty
+settings:
+  appearance: Appearance
+  theme: Theme
+  theme_light: Light
+  theme_dark: Dark
+  theme_system: System
+  theme_desc: Change the theme of the app
+  language: Language
+  language_desc: Set the language of the app
+  auto: Auto
+  animations: Animations
+  animations_desc: Show smooth transitions for changing power
+  update_and_monitoring: Update & Monitoring
+  update_frequency: Update Frequency
+  update_frequency_desc: How often to refresh power data
+  background_monitoring: Background Monitoring
+  background_monitoring_desc: Keep the app running in the background
+  status_bar: Status Bar
+  status_bar_desc: What kind of information to show in the status bar
+  system_total: System Total
+  screen_power: Screen Power
+  heatpipe_power: Heatpipe Power
+  show_charging_power: Show Charging Power
+  show_charging_power_desc: When charging, show the charging power instead of the system power
+  about: About
+
+  version: Version
+  build: Build
+  license: License
+  author: Author

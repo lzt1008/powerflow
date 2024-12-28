@@ -97,11 +97,11 @@ function SettingsSection(props: SettingsSectionProps) {
   >
     <!-- Appearance Section -->
     <section class="space-y-8">
-      <SettingsSection title="Appearance" :icon="Eye" />
+      <SettingsSection :title="$t('settings.appearance')" :icon="Eye" />
       <div class="space-y-4">
         <SettingsItem
-          name="Theme"
-          description="Select preferred theme"
+          :name="$t('settings.theme')"
+          :description="$t('settings.theme_desc')"
           :icon="Palette"
         >
           <Select v-model="preference.theme">
@@ -113,19 +113,19 @@ function SettingsSection(props: SettingsSectionProps) {
                 <SelectItem value="system">
                   <div class="flex items-center">
                     <SunMoon class="size-4 mr-3" />
-                    System
+                    {{ $t('settings.theme_system') }}
                   </div>
                 </SelectItem>
                 <SelectItem class="flex" value="light">
                   <div class="flex items-center">
                     <Sun class="size-4 mr-3" />
-                    Light
+                    {{ $t('settings.theme_light') }}
                   </div>
                 </SelectItem>
                 <SelectItem class="flex" value="dark">
                   <div class="flex items-center">
                     <Moon class="size-4 mr-3" />
-                    Dark
+                    {{ $t('settings.theme_dark') }}
                   </div>
                 </SelectItem>
               </SelectGroup>
@@ -133,7 +133,11 @@ function SettingsSection(props: SettingsSectionProps) {
           </Select>
         </SettingsItem>
 
-        <SettingsItem name="Language" description="Select preferred language" :icon="Languages">
+        <SettingsItem
+          :name="$t('settings.language')"
+          :description="$t('settings.language_desc')"
+          :icon="Languages"
+        >
           <Select v-model="preference.language" default-value="en">
             <SelectTrigger class="w-[120px]">
               <SelectValue placeholder="Select a language" />
@@ -143,7 +147,7 @@ function SettingsSection(props: SettingsSectionProps) {
                 <SelectItem value="en">
                   English
                 </SelectItem>
-                <SelectItem value="zh-cn">
+                <SelectItem value="zh-CN">
                   简体中文
                 </SelectItem>
               </SelectGroup>
@@ -152,8 +156,8 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Animations"
-          description="Show smooth transitions for changing values"
+          :name="$t('settings.animations')"
+          :description="$t('settings.animations_desc')"
           :icon="CircleDashed"
         >
           <Skeleton v-if="loading" class="w-12 h-6" />
@@ -171,9 +175,16 @@ function SettingsSection(props: SettingsSectionProps) {
 
     <!-- Updates & Monitoring Section -->
     <section class="space-y-8">
-      <SettingsSection title="Updates & Monitoring" :icon="RotateCw" />
+      <SettingsSection
+        :title="$t('settings.update_and_monitoring')"
+        :icon="RotateCw"
+      />
       <div class="space-y-4">
-        <SettingsItem name="Update Frequency" description="How often to refresh power data" :icon="Gauge">
+        <SettingsItem
+          :name="$t('settings.update_frequency')"
+          :description="$t('settings.update_frequency_desc')"
+          :icon="Gauge"
+        >
           <NumberField
             v-model="preference.updateInterval"
             :format-options="{
@@ -196,8 +207,8 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Background Monitoring"
-          description="Continue monitoring when app is in background"
+          :name="$t('settings.background_monitoring')"
+          :description="$t('settings.background_monitoring_desc')"
           :icon="Activity"
         >
           <Switch
@@ -209,24 +220,24 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Status Bar"
-          description="What kind of information to show in status bar"
+          :name="$t('settings.status_bar')"
+          :description="$t('settings.status_bar_desc')"
           :icon="BadgeInfo"
         >
           <Select v-model="preference.statusBarItem" default-value="system">
             <SelectTrigger class="w-[150px]">
-              <SelectValue placeholder="Select a language" />
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="system">
-                  System Toatal
+                  {{ $t('settings.system_total') }}
                 </SelectItem>
                 <SelectItem value="screen">
-                  Screen Power
+                  {{ $t('settings.screen_power') }}
                 </SelectItem>
                 <SelectItem value="heatpipe">
-                  Heatpipe Power
+                  {{ $t('settings.heatpipe_power') }}
                 </SelectItem>
               </SelectGroup>
             </SelectContent>
@@ -234,8 +245,8 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Show Charging Power"
-          description="When charging, override status bar with charging power"
+          :name="$t('settings.show_charging_power')"
+          :description="$t('settings.show_charging_power_desc')"
           :icon="BatteryCharging"
         >
           <Switch v-model:checked="preference.statusBarShowCharging" class="data-[state=checked]:bg-green-500" />
@@ -276,13 +287,13 @@ function SettingsSection(props: SettingsSectionProps) {
       <div>
         <h3 class="flex items-center gap-2 text-lg font-semibold">
           <Wallet class="h-5 w-5" />
-          About
+          {{ $t('settings.about') }}
         </h3>
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
           <div class="text-sm font-medium text-muted-foreground">
-            Version
+            {{ $t('settings.version') }}
           </div>
           <div class="text-sm">
             {{ version }}
@@ -290,7 +301,7 @@ function SettingsSection(props: SettingsSectionProps) {
         </div>
         <div>
           <div class="text-sm font-medium text-muted-foreground">
-            Build
+            {{ $t('settings.build') }}
           </div>
           <div class="text-sm flex items-center">
             {{ commitHash.slice(0, 7) }}
@@ -305,7 +316,7 @@ function SettingsSection(props: SettingsSectionProps) {
         </div>
         <div>
           <div class="text-sm font-medium text-muted-foreground">
-            License
+            {{ $t('settings.license') }}
           </div>
           <div class="text-sm">
             MIT License
@@ -313,7 +324,7 @@ function SettingsSection(props: SettingsSectionProps) {
         </div>
         <div>
           <div class="text-sm font-medium text-muted-foreground">
-            Author
+            {{ $t('settings.author') }}
           </div>
           <div class="text-sm">
             Samuel Lyon

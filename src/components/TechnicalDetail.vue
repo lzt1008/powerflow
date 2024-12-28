@@ -9,7 +9,7 @@ const power = usePower()
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-sm font-medium">
-          Temperature
+          {{ $t('temperature') }}
         </CardTitle>
         <Thermometer class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
@@ -19,14 +19,14 @@ const power = usePower()
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
-          Current battery temperature
+          {{ $t('temperature_desc') }}
         </p>
       </CardContent>
     </Card>
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-sm font-medium">
-          Battery Health
+          {{ $t('battery_health') }}
         </CardTitle>
         <Battery class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
@@ -36,14 +36,14 @@ const power = usePower()
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
-          Maximum capacity relative to new
+          {{ $t('battery_health_desc') }}
         </p>
       </CardContent>
     </Card>
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-sm font-medium">
-          Cycle Count
+          {{ $t('cycle_count') }}
         </CardTitle>
         <Cpu class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
@@ -53,7 +53,7 @@ const power = usePower()
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
-          Total battery cycles
+          {{ $t('cycle_count_desc') }}
         </p>
       </CardContent>
     </Card>

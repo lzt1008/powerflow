@@ -31,7 +31,7 @@ const power = usePower()
 <template>
   <Card class="flex-1">
     <CardHeader>
-      <CardTitle>Power Flow</CardTitle>
+      <CardTitle>{{ $t('power_flow') }}</CardTitle>
     </CardHeader>
     <CardContent>
       <Skeleton v-if="power.isLoading" class="w-full h-[120px]" />

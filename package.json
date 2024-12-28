@@ -11,6 +11,7 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@intlify/unplugin-vue-i18n": "^6.0.2",
     "@number-flow/vue": "^0.3.3",
     "@radix-icons/vue": "^1.0.0",
     "@tauri-apps/api": "^2",
@@ -31,7 +32,8 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "tauri-plugin-pinia": "^0.10.1",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "vue-i18n": "10"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.12.0",

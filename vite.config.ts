@@ -2,6 +2,7 @@ import { execSync } from 'node:child_process'
 import process from 'node:process'
 import { fileURLToPath, URL } from 'node:url'
 
+import vueI18nPlugin from '@intlify/unplugin-vue-i18n/vite'
 import vue from '@vitejs/plugin-vue'
 import vueJsx from '@vitejs/plugin-vue-jsx'
 import autoprefixer from 'autoprefixer'
@@ -20,6 +21,11 @@ export default defineConfig(async mode => ({
   plugins: [
     vue(),
     vueJsx(),
+    vueI18nPlugin({
+      include: [
+        'locales/**',
+      ],
+    }),
     autoImport({
       imports: ['vue', 'pinia', '@vueuse/core'],
       dirsScanOptions: {
