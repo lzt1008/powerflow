@@ -28,7 +28,7 @@ export const shortDistanceLocale: Locale = {
 }
 
 export function formatUpdateTime(date: ArgumentsType<typeof formatDistanceToNow>[0]) {
-  formatDistanceToNow(date, {
+  return formatDistanceToNow(date, {
     addSuffix: true,
     includeSeconds: true,
     locale: shortDistanceLocale,
