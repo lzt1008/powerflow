@@ -35,8 +35,7 @@ useSetup()
 const loading = ref(true)
 const preference = usePreference()
 
-preference.$tauri.start().then(() => {
-  loading.value = false
+preference.$tauri.start().then(async () => {
   const refs = storeToRefs(preference)
 
   for (const key in refs) {
@@ -48,6 +47,8 @@ preference.$tauri.start().then(() => {
       } as any)
     })
   }
+
+  loading.value = false
 })
 
 interface SettingsItemProps {
@@ -60,9 +61,7 @@ function SettingsItem(props: SettingsItemProps, { slots }: SetupContext) {
   return (
     <div class="flex items-center justify-between">
       <div class="flex gap-4">
-        {
-          h(props.icon, { class: 'size-4 mt-[4px]' })
-        }
+        { h(props.icon, { class: 'size-4 mt-[4px]' }) }
         <div class="flex flex-col gap-1">
           <Label class="font-medium">{props.name}</Label>
           <span class="text-xs text-muted-foreground mr-4">
