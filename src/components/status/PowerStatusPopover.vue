@@ -42,7 +42,7 @@ onUnmounted(() => {
 
 const focused = useWindowFocus()
 watch(focused, () => {
-  motion?.apply(!focused.value ? 'initial' : 'visible')
+  motion?.apply(focused.value ? 'visible' : 'initial')
 })
 </script>
 
