@@ -27,15 +27,15 @@ export default defineConfig(async mode => ({
       },
       defaultExportByFilename: true,
       dirs: [
-        './src/composables/**',
-        './src/components/**',
-        './src/stores/**',
+        'src/composables/**',
+        'src/components/**',
+        'src/stores/**',
       ],
-      dts: './.auto-imports/auto-imports.d.ts',
-      vueTemplate: true,
+      dts: '.auto-imports/auto-imports.d.ts',
+      // vueTemplate: true,
     }),
     components({
-      dts: './.auto-imports/components.d.ts',
+      dts: '.auto-imports/components.d.ts',
     }),
   ],
   css: {
