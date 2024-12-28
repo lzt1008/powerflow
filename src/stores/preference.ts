@@ -1,5 +1,4 @@
 import type { StatusBarItem, Theme } from '@/bindings'
-import { is } from 'date-fns/locale'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -24,7 +23,6 @@ export const usePreference = defineStore('preference', () => {
     saveOnChange: true,
     saveStrategy: 'debounce',
     saveInterval: 1000,
-    
   },
 })
 
