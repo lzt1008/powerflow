@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { events } from './bindings'
-
 useSetup()
 
 const tab = useTab()
@@ -10,29 +8,8 @@ const titleBar = useTitlebar()
 const target = useTemplateRef<HTMLElement>('target')
 const { y } = useScroll(target)
 
-const preference = usePreference()
-const preferDark = usePreferredDark()
-
-preference.$tauri.start().then(() => {
-  document.documentElement.classList.toggle('dark', preference.theme === 'system'
-    ? preferDark.value
-    : preference.theme === 'dark')
-})
-
-events.preferenceEvent.listen(({ payload }) => {
-  if ('theme' in payload) {
-    document.documentElement.classList.toggle('dark', payload.theme === 'system'
-      ? preferDark.value
-      : payload.theme === 'dark')
-  }
-})
-
 watchEffect(() => {
   titleBar.shouldDisplayShadow.value = y.value > 0
-})
-
-onMounted(() => {
-  events.windowLoadedEvent.emit()
 })
 </script>
 
