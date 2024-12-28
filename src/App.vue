@@ -1,19 +1,34 @@
 <script setup lang="ts">
-import { commands } from '@/bindings'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { LaptopIcon, MobileIcon, Share2Icon } from '@radix-icons/vue'
-import { useScroll } from '@vueuse/core'
-import { SettingsIcon } from 'lucide-vue-next'
-import { onMounted, ref, watchEffect } from 'vue'
 import { events } from './bindings'
-import PowerAnalytics from './components/PowerAnalytics.vue'
 
-const shouldDisplayShadow = ref(false)
-const target = ref<HTMLElement | null>(null)
+useSetup()
+
+const tab = useTab()
+const data = usePowerData()
+const titleBar = useTitlebar()
+
+const target = useTemplateRef<HTMLElement>('target')
 const { y } = useScroll(target)
 
+const preference = usePreference()
+const preferDark = usePreferredDark()
+
+preference.$tauri.start().then(() => {
+  document.documentElement.classList.toggle('dark', preference.theme === 'system'
+    ? preferDark.value
+    : preference.theme === 'dark')
+})
+
+events.preferenceEvent.listen(({ payload }) => {
+  if ('theme' in payload) {
+    document.documentElement.classList.toggle('dark', payload.theme === 'system'
+      ? preferDark.value
+      : payload.theme === 'dark')
+  }
+})
+
 watchEffect(() => {
-  shouldDisplayShadow.value = y.value > 0
+  titleBar.shouldDisplayShadow.value = y.value > 0
 })
 
 onMounted(() => {
@@ -22,56 +37,29 @@ onMounted(() => {
 </script>
 
 <template>
-  <Tabs default-value="mac">
+  <Tabs
+    v-model="tab"
+    default-value="local"
+  >
+    <TitleBar />
     <div
-      data-tauri-drag-region
-      class="sticky top-0 flex justify-between items-center z-10 py-2 pr-4 transition-shadow bg-background"
-      :class="{ shadow: shouldDisplayShadow }"
+      ref="target"
+      class="h-[calc(100vh-52px)] pb-4 overflow-scroll "
     >
-      <div class="flex items-center gap-3 font-mono text-sm">
-        <TabsList class="ml-[6rem]">
-          <TabsTrigger value="mac">
-            <LaptopIcon class="size-4 text-green-500" />
-          </TabsTrigger>
-          <TabsTrigger value="iphone">
-            <MobileIcon class="size-4 text-muted-foreground" />
-          </TabsTrigger>
-        </TabsList>
-        <div class="flex flex-col -translate-y-[1px]">
-          <span class="text-secondary-foreground font-bold">Macbook Pro</span>
-          <span class="text-[10px] leading-[10px] font-normal text-muted-foreground">2022</span>
-        </div>
-      </div>
-      <div class="flex gap-2">
-        <div class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
-          <Share2Icon class="text-muted-foreground size-5" />
-        </div>
-        <div class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
-          <SettingsIcon
-            class="text-muted-foreground size-5"
-            @click="commands.openSettings()"
-          />
-        </div>
-      </div>
-    </div>
-
-    <div ref="target" class="h-[calc(100vh-52px)] pb-4 overflow-scroll bg-background">
-      <TabsContent value="mac" class="overflow-scroll">
-        <main class="bg-background container px-4">
-          <PowerAnalytics class="overflow-scroll" />
+      <TabsContent value="local">
+        <main class="px-4">
+          <MainContent />
         </main>
       </TabsContent>
-      <TabsContent value="iphone" class="h-full">
-        <div class="flex items-center justify-center h-full font-mono text-4xl">
-          todo!()
-        </div>
+      <TabsContent
+        v-for="udid in Object.keys(data.remote)"
+        :key="udid"
+        :value="udid"
+      >
+        <main class="px-4">
+          <MainContent />
+        </main>
       </TabsContent>
     </div>
   </Tabs>
 </template>
-
-<style>
-body {
-  overflow: hidden;
-}
-</style>

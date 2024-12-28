@@ -1,15 +1,28 @@
-use std::time::Duration;
-
-use tauri::{async_runtime, Manager, Runtime};
-use tauri_plugin_pinia::ManagerExt;
-use tauri_specta::Event;
-use tokio::{select, sync::mpsc};
-use tpower::{
-    ffi::smc::{SMCConnection, SMCPowerData, SMCReadSensor},
-    provider::get_mac_ioreg,
+use std::{
+    collections::HashMap,
+    ffi::c_void,
+    mem::{self, MaybeUninit},
+    time::Duration,
 };
 
-use crate::event::{PowerTickEvent, PowerUpdatedEvent, StatusBarItem};
+use serde::{Deserialize, Serialize};
+use specta::Type;
+use tauri::{async_runtime, AppHandle, Manager, Runtime};
+use tauri_plugin_pinia::ManagerExt;
+use tauri_specta::Event;
+use tokio::{select, sync::mpsc, task::spawn_blocking, time};
+use tpower::{
+    de::IORegistry,
+    ffi::{
+        core_foundation::runloop::CFRunLoopRun,
+        smc::{SMCConnection, SMCPowerData, SMCReadSensor},
+        wrapper::{Device, ServiceConnection},
+        AMDeviceNotificationCallbackInfo, AMDeviceNotificationSubscribe, Action,
+    },
+    provider::{get_mac_ioreg, remote::get_device_ioreg},
+};
+
+use crate::event::{DeviceEvent, DevicePowerTickEvent, PowerUpdatedEvent, StatusBarItem};
 
 pub enum SenderMessage {
     ImmediateSend,
@@ -47,6 +60,13 @@ impl PowerUpdatedEvent {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PowerTickEvent {
+    pub io: IORegistry,
+    pub smc: SMCPowerData,
+}
+
 pub fn start_sender<R: Runtime>(
     app: &impl Manager<R>,
     mut rx: mpsc::Receiver<SenderMessage>,
@@ -54,7 +74,7 @@ pub fn start_sender<R: Runtime>(
     let app = app.app_handle().clone();
     let mut smc_conn = SMCConnection::new("AppleSMC").unwrap();
 
-    let mut timer = tokio::time::interval(Duration::from_millis(
+    let mut timer = time::interval(Duration::from_millis(
         app.pinia()
             .try_get::<u64>("preference", "updateInterval")
             .unwrap_or(2000),
@@ -94,9 +114,8 @@ pub fn start_sender<R: Runtime>(
                             }.emit(&app).unwrap();
                         },
                         SenderMessage::ChangeInterval(interval) => {
-                            timer = tokio::time::interval(if interval < Duration::from_millis(100) {
-                                // log::warn!("minimum interval is 100ms");
-                                Duration::from_millis(100)
+                            timer = time::interval(if interval < Duration::from_millis(500) {
+                                Duration::from_millis(500)
                             } else {
                                 interval
                             });
@@ -113,6 +132,108 @@ pub fn start_sender<R: Runtime>(
                                 .emit(&app)
                                 .unwrap();
                         }
+                    }
+                }
+            }
+        }
+    })
+}
+
+#[derive(Debug)]
+pub struct DeviceMessage {
+    device: Device,
+    action: Action,
+}
+
+pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
+    let (tx, rx) = mpsc::channel::<DeviceMessage>(10);
+
+    extern "C" fn callback(info: *const AMDeviceNotificationCallbackInfo, context: *mut c_void) {
+        let tx = unsafe { Box::from_raw(context as *mut mpsc::Sender<DeviceMessage>) };
+        let info = unsafe { *&*info };
+        let device = Device::new(info.device);
+
+        async_runtime::spawn(async move {
+            tx.send(DeviceMessage {
+                device,
+                action: info.action,
+            })
+            .await
+            .unwrap();
+            mem::forget(tx);
+        });
+    }
+
+    spawn_blocking(move || {
+        let boxed = Box::new(tx);
+        let mut not = MaybeUninit::uninit();
+        unsafe {
+            AMDeviceNotificationSubscribe(
+                callback,
+                0,
+                0,
+                Box::into_raw(boxed) as *mut _,
+                not.as_mut_ptr(),
+            )
+        };
+        unsafe { CFRunLoopRun() };
+    });
+
+    rx
+}
+
+pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
+    let mut rx = start_device_listener();
+    let mut timer = time::interval(Duration::from_millis(1000));
+
+    let mut devices: HashMap<Device, ServiceConnection> = HashMap::new();
+
+    async_runtime::spawn(async move {
+        loop {
+            select! {
+                _ = timer.tick() => {
+                    for (device, conn) in devices.iter() {
+                        match get_device_ioreg(conn) {
+                            Ok(res) => DevicePowerTickEvent {
+                                io: res,
+                                udid: device.udid.clone(),
+                            }.emit(&handle).unwrap(),
+                            Err(err) => {
+                                log::error!("Failed to get IORegistry: {err}");
+                            }
+                        }
+                    }
+                }
+                Some(DeviceMessage { device, action }) = rx.recv() => {
+
+                    match action {
+                        Action::Attached => {
+                            // unwrap pair
+                            device.prepare_device().unwrap();
+                            let conn = device.start_service("com.apple.mobile.diagnostics_relay");
+
+                            DeviceEvent {
+                                udid: device.udid.clone(),
+                                // must call `device.name()` after `device.prepare_device()`
+                                // or name will be empty causing panic
+                                name: device.name(),
+                                interface: device.interface_type,
+                                action,
+                            }.emit(&handle).unwrap();
+
+                            devices.insert(device, conn);
+                        },
+                        Action::Detached => {
+                            log::info!("Device detached: {}", device.udid);
+                            DeviceEvent {
+                                udid: device.udid.clone(),
+                                name: String::new(),
+                                interface: device.interface_type,
+                                action,
+                            }.emit(&handle).unwrap();
+                            devices.remove(&device);
+                        },
+                        _ => ()
                     }
                 }
             }

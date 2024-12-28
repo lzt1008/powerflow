@@ -4024,7 +4024,7 @@ dependencies = [
  "tauri-runtime",
  "tauri-runtime-wry",
  "tauri-utils",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "tokio",
  "tray-icon",
  "url",
@@ -4040,10 +4040,12 @@ name = "tauri-app"
 version = "0.1.0"
 dependencies = [
  "cocoa",
+ "log",
  "objc",
  "objc2",
  "objc2-app-kit",
  "objc2-foundation",
+ "scopefn",
  "serde",
  "serde_json",
  "specta",
@@ -4056,6 +4058,7 @@ dependencies = [
  "tauri-plugin-positioner",
  "tauri-plugin-shell",
  "tauri-specta",
+ "thiserror 2.0.9",
  "tokio",
  "tpower",
 ]
@@ -4102,7 +4105,7 @@ dependencies = [
  "sha2",
  "syn 2.0.90",
  "tauri-utils",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "time",
  "url",
  "uuid",
@@ -4156,7 +4159,7 @@ dependencies = [
  "serde_json",
  "tauri",
  "tauri-plugin",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "url",
  "windows",
  "zbus",
@@ -4187,7 +4190,7 @@ dependencies = [
  "serde_repr",
  "tauri",
  "tauri-plugin",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
 ]
 
 [[package]]
@@ -4207,7 +4210,7 @@ dependencies = [
  "shared_child",
  "tauri",
  "tauri-plugin",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "tokio",
 ]
 
@@ -4225,7 +4228,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri-utils",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "url",
  "windows",
 ]
@@ -4298,7 +4301,7 @@ dependencies = [
  "tauri-plugin",
  "tauri-store-macros",
  "tauri-store-utils",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "tokio",
  "tracing",
 ]
@@ -4322,7 +4325,7 @@ checksum = "b75112240c132a749532d8b54b1871682555634eaa20901e42f0f4329879b904"
 dependencies = [
  "futures",
  "tauri",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "tokio",
  "tracing",
 ]
@@ -4356,7 +4359,7 @@ dependencies = [
  "serde_json",
  "serde_with",
  "swift-rs",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
  "toml 0.8.2",
  "url",
  "urlpattern",
@@ -4415,11 +4418,11 @@ dependencies = [
 
 [[package]]
 name = "thiserror"
-version = "2.0.8"
+version = "2.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08f5383f3e0071702bf93ab5ee99b52d26936be9dedd9413067cbdcddcb6141a"
+checksum = "f072643fd0190df67a8bab670c20ef5d8737177d6ac6b2e9a236cb096206b2cc"
 dependencies = [
- "thiserror-impl 2.0.8",
+ "thiserror-impl 2.0.9",
 ]
 
 [[package]]
@@ -4435,9 +4438,9 @@ dependencies = [
 
 [[package]]
 name = "thiserror-impl"
-version = "2.0.8"
+version = "2.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2f357fcec90b3caef6623a099691be676d033b40a058ac95d2a6ade6fa0c943"
+checksum = "7b50fa271071aae2e6ee85f842e2e28ba8cd2c5fb67f11fcb1fd70b276f9e7d4"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -4623,7 +4626,7 @@ dependencies = [
  "serde",
  "specta",
  "specta-typescript",
- "thiserror 2.0.8",
+ "thiserror 2.0.9",
 ]
 
 [[package]]

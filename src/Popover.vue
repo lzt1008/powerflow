@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import PowerStatus from './components/PowerStatus.vue'
+useSetup()
 </script>
 
 <template>
-  <PowerStatus />
+  <PowerStatusPopover>
+    <PowerStatus />
+  </PowerStatusPopover>
 </template>
 
-<style scoped></style>
+<style>
+body {
+  background: transparent;
+}
+</style>

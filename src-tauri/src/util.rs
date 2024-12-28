@@ -1,13 +1,13 @@
 use std::ffi::c_void;
 
-use objc2::{msg_send, rc::Id};
+use objc2::msg_send;
 use objc2_app_kit::{NSView, NSWindow, NSWindowButton};
 use objc2_foundation::NSRect;
 
 // From https://github.com/hoppscotch/hoppscotch/blob/a08c6f6b3eb7df152f1e0e9bc001e61bbe7a582e/packages/hoppscotch-selfhost-desktop/src-tauri/src/mac/window.rs
 pub fn set_window_controls_pos(window: *mut c_void, x: f64, y: f64) {
     unsafe {
-        let window = Id::from_raw(window as *mut NSWindow).unwrap();
+        let window = (window as *mut NSWindow).as_ref().unwrap();
         let close = window
             .standardWindowButton(NSWindowButton::NSWindowCloseButton)
             .unwrap();

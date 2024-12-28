@@ -1,25 +1,35 @@
+use std::collections::{HashMap, HashSet};
 use std::process;
+use std::sync::Mutex;
 use std::time::Duration;
 
-use data::{start_sender, SenderMessage};
+use data::{start_device_sender, start_sender, PowerTickEvent, SenderMessage};
 use event::{
-    HidePopoverEvent, PowerTickEvent, PowerUpdatedEvent, PreferenceEvent, WindowLoadedEvent,
+    DeviceEvent, DevicePowerTickEvent, HidePopoverEvent, PowerUpdatedEvent, PreferenceEvent, Theme,
+    WindowLoadedEvent,
 };
 use ext::WebviewWindowExt;
 use menu::setup_menu;
+use objc2_app_kit::{
+    NSAppearance, NSAppearanceCustomization, NSAppearanceNameVibrantDark,
+    NSAppearanceNameVibrantLight, NSWindow,
+};
+use scopefn::Run;
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri::menu::{MenuBuilder, MenuItemBuilder};
 use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{
-    async_runtime, ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, Window, WindowEvent,
+    async_runtime, ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, State, Window,
+    WindowEvent,
 };
 use tauri_plugin_positioner::{Position, WindowExt};
 use tauri_specta::{collect_commands, collect_events, Event};
 use tokio::sync::mpsc;
+use tpower::ffi::{Action, InterfaceType};
 use util::set_window_controls_pos;
 
-mod data;
+pub mod data;
 mod event;
 mod ext;
 mod menu;
@@ -52,10 +62,61 @@ fn is_main_window_hidden(app: AppHandle) -> bool {
         .unwrap_or(false)
 }
 
+#[tauri::command]
+#[specta::specta]
+fn get_device_name(
+    id: String,
+    state: State<Mutex<AppState>>,
+) -> Option<(String, HashSet<InterfaceType>)> {
+    let state = state.lock().unwrap();
+    let data = state.devices.get(&id);
+    data.cloned()
+}
+
+#[tauri::command]
+#[specta::specta]
+fn get_mac_name() -> Option<String> {
+    let output = std::process::Command::new("scutil")
+        .arg("--get")
+        .arg("ComputerName")
+        .output()
+        .ok()?;
+
+    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
+fn switch_theme(theme: Theme, app: AppHandle) {
+    let apprence = match theme {
+        Theme::Light => NSAppearance::appearanceNamed(unsafe { NSAppearanceNameVibrantLight }),
+        Theme::Dark => NSAppearance::appearanceNamed(unsafe { NSAppearanceNameVibrantDark }),
+        Theme::System => None,
+    };
+    app.webview_windows().values().for_each(|w| unsafe {
+        (w.ns_window().unwrap() as *mut NSWindow)
+            .as_ref()
+            .map(|w| w.setAppearance(apprence.as_deref()));
+    });
+}
+
+pub struct AppState {
+    devices: HashMap<String, (String, HashSet<InterfaceType>)>,
+}
+
 pub async fn run() {
     let builder = tauri_specta::Builder::<tauri::Wry>::new()
-        .commands(collect_commands![open_app, is_main_window_hidden, open_settings])
+        .commands(collect_commands![
+            open_app,
+            is_main_window_hidden,
+            open_settings,
+            get_device_name,
+            get_mac_name,
+            switch_theme
+        ])
         .events(collect_events![
+            DeviceEvent,
+            DevicePowerTickEvent,
             PowerTickEvent,
             PreferenceEvent,
             PowerUpdatedEvent,
@@ -73,18 +134,48 @@ pub async fn run() {
         )
         .expect("Failed to export typescript bindings");
 
+    let app_state = Mutex::new(AppState {
+        devices: HashMap::new(),
+    });
+
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_pinia::init())
         .invoke_handler(builder.invoke_handler())
+        .manage(app_state)
         .menu(setup_menu)
         .on_window_event(handle_window_event)
         .setup(move |app| {
             builder.mount_events(app);
+
+            let handle = app.app_handle().clone();
+
+            DeviceEvent::listen(app, move |event| {
+                let event = event.payload;
+                let app_state: State<Mutex<AppState>> = handle.state();
+
+                app_state
+                    .lock()
+                    .unwrap()
+                    .devices
+                    .entry(event.udid.clone())
+                    .or_insert_with(|| (event.name, HashSet::new()))
+                    .run(|e| match event.action {
+                        Action::Attached => {
+                            e.1.insert(event.interface);
+                        }
+                        Action::Detached => {
+                            e.1.remove(&event.interface);
+                        }
+                        _ => (),
+                    });
+            });
+
             setup_tray_icon(app)?;
             setup_sender_with_events(app);
+            start_device_sender(app.app_handle().clone());
 
             set_window_controls_pos(app.main_window().unwrap().ns_window().unwrap(), 22., 24.);
 

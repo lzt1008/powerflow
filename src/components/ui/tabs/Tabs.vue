@@ -6,10 +6,13 @@ const props = defineProps<TabsRootProps>()
 const emits = defineEmits<TabsRootEmits>()
 
 const forwarded = useForwardPropsEmits(props, emits)
+// const tab = useCurrentTab()
 </script>
 
 <template>
-  <TabsRoot v-bind="forwarded">
+  <TabsRoot
+    v-bind="forwarded"
+  >
     <slot />
   </TabsRoot>
 </template>

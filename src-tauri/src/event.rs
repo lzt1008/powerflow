@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
-use tpower::{de::IORegistry, ffi::smc::SMCPowerData};
+use tpower::{de::IORegistry, ffi::{Action, InterfaceType}};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 #[serde(rename_all = "kebab-case")]
@@ -32,9 +32,18 @@ pub enum PreferenceEvent {
 
 #[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
 #[serde(rename_all = "camelCase")]
-pub struct PowerTickEvent {
+pub struct DevicePowerTickEvent {
+    pub udid: String,
     pub io: IORegistry,
-    pub smc: SMCPowerData,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DeviceEvent {
+    pub udid: String,
+    pub name: String,
+    pub interface: InterfaceType,
+    pub action: Action,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]

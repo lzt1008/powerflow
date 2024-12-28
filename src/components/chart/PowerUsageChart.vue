@@ -1,16 +1,12 @@
 <script setup lang="ts">
-import type { StatisticData } from '@/composables'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { LineChart } from '@/components/ui/chart-line'
-import { usePower } from '@/composables'
-import { computed } from 'vue'
-import ChartTooltip from './ChartTooltip.vue'
-import Skeleton from './ui/skeleton/Skeleton.vue'
+import CustomChartTooltip from './CustomChartTooltip.vue'
 
 const power = usePower()
-
 const categories = computed(() => {
-  const base = ['System Power', 'Screen Power', 'Heatpipe Power'] as (keyof StatisticData)[]
+  const base = ['System Power'] as (keyof StatisticData)[]
+  if (!power.value.isRemote) {
+    base.push('Screen Power', 'Heatpipe Power')
+  }
   if (power.value.isCharging) {
     base.push('System In')
   }
@@ -32,9 +28,9 @@ const categories = computed(() => {
         class="w-full h-[240px]"
         index="time"
         :y-formatter="(value) => `${value}W`"
-        :data="power.statistics?.length < 2 ? [] : (power?.statistics || [])"
+        :data="power?.statistics"
         :categories
-        :custom-tooltip="ChartTooltip"
+        :custom-tooltip="CustomChartTooltip"
       />
     </CardContent>
   </Card>

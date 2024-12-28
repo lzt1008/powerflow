@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { MobileIcon } from '@radix-icons/vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
@@ -28,6 +29,8 @@ import { Skeleton } from './components/ui/skeleton'
 import { usePreference } from './stores/preference'
 
 const commitHash = __COMMIT_HASH__
+
+useSetup()
 
 const loading = ref(true)
 const preference = usePreference()
@@ -90,7 +93,9 @@ function SettingsSection(props: SettingsSectionProps) {
 </script>
 
 <template>
-  <div class="space-y-8 p-6 bg-background overflow-auto h-dvh">
+  <div
+    class="space-y-8 p-6 bg-background overflow-auto h-dvh"
+  >
     <!-- Appearance Section -->
     <section class="space-y-8">
       <SettingsSection title="Appearance" :icon="Eye" />
@@ -148,12 +153,15 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Animations" description="Show smooth transitions for changing values"
+          name="Animations"
+          description="Show smooth transitions for changing values"
           :icon="CircleDashed"
         >
           <Skeleton v-if="loading" class="w-12 h-6" />
           <Switch
-            v-else id="animations" v-model:checked="preference.animationsEnabled"
+            v-else
+            id="animations"
+            v-model:checked="preference.animationsEnabled"
             class="data-[state=checked]:bg-green-500"
           />
         </SettingsItem>
@@ -175,7 +183,10 @@ function SettingsSection(props: SettingsSectionProps) {
               unit: 'millisecond',
               unitDisplay: 'short',
             }"
-            locale="en-US" :min="500" :step="500" class="w-32"
+            locale="en-US"
+            :min="500"
+            :step="500"
+            class="w-32"
           >
             <NumberFieldContent>
               <NumberFieldDecrement />
@@ -186,14 +197,21 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Background Monitoring" description="Continue monitoring when app is in background"
+          name="Background Monitoring"
+          description="Continue monitoring when app is in background"
           :icon="Activity"
         >
-          <Switch id="background-monitoring" class="data-[state=checked]:bg-green-500" disabled checked />
+          <Switch
+            id="background-monitoring"
+            class="data-[state=checked]:bg-green-500"
+            disabled
+            checked
+          />
         </SettingsItem>
 
         <SettingsItem
-          name="Status Bar" description="What kind of information to show in status bar"
+          name="Status Bar"
+          description="What kind of information to show in status bar"
           :icon="BadgeInfo"
         >
           <Select v-model="preference.statusBarItem" default-value="system">
@@ -217,10 +235,37 @@ function SettingsSection(props: SettingsSectionProps) {
         </SettingsItem>
 
         <SettingsItem
-          name="Show Charging Power" description="When charging, override status bar with charging power"
+          name="Show Charging Power"
+          description="When charging, override status bar with charging power"
           :icon="BatteryCharging"
         >
           <Switch v-model:checked="preference.statusBarShowCharging" class="data-[state=checked]:bg-green-500" />
+        </SettingsItem>
+      </div>
+    </section>
+
+    <Separator />
+
+    <section class="space-y-8">
+      <SettingsSection title="Paired Devices" :icon="MobileIcon" />
+      <div class="space-y-4">
+        <SettingsItem
+          name="iPhone 13 Pro"
+          description="00000000-0000-0000-0000-000000000000"
+          :icon="MobileIcon"
+        >
+          <Skeleton v-if="loading" class="w-12 h-6" />
+          <Button
+            variant="outline"
+            size="sm"
+            class="
+          text-red-500 hover:text-red-600
+          border-red-500/20 hover:border-red-500/50
+          hover:bg-red-500/10
+            "
+          >
+            Delete
+          </Button>
         </SettingsItem>
       </div>
     </section>

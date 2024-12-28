@@ -7,6 +7,8 @@ import vueJsx from '@vitejs/plugin-vue-jsx'
 import autoprefixer from 'autoprefixer'
 import { format } from 'date-fns'
 import tailwind from 'tailwindcss'
+import autoImport from 'unplugin-auto-import/vite'
+import components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
 const host = process.env.TAURI_DEV_HOST
@@ -15,7 +17,27 @@ const commitHash = execSync('git rev-parse HEAD').toString().trim()
 
 // https://vitejs.dev/config/
 export default defineConfig(async mode => ({
-  plugins: [vue(), vueJsx()],
+  plugins: [
+    vue(),
+    vueJsx(),
+    autoImport({
+      imports: ['vue', 'pinia', '@vueuse/core'],
+      dirsScanOptions: {
+        types: true,
+      },
+      defaultExportByFilename: true,
+      dirs: [
+        './src/composables/**',
+        './src/components/**',
+        './src/stores/**',
+      ],
+      dts: './.auto-imports/auto-imports.d.ts',
+      vueTemplate: true,
+    }),
+    components({
+      dts: './.auto-imports/components.d.ts',
+    }),
+  ],
   css: {
     postcss: {
       plugins: [tailwind(), autoprefixer()],

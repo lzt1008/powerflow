@@ -13,6 +13,15 @@ async isMainWindowHidden() : Promise<boolean> {
 },
 async openSettings() : Promise<void> {
     await TAURI_INVOKE("open_settings");
+},
+async getDeviceName(id: string) : Promise<[string, InterfaceType[]] | null> {
+    return await TAURI_INVOKE("get_device_name", { id });
+},
+async getMacName() : Promise<string | null> {
+    return await TAURI_INVOKE("get_mac_name");
+},
+async switchTheme(theme: Theme) : Promise<void> {
+    await TAURI_INVOKE("switch_theme", { theme });
 }
 }
 
@@ -20,12 +29,16 @@ async openSettings() : Promise<void> {
 
 
 export const events = __makeEvents__<{
+deviceEvent: DeviceEvent,
+devicePowerTickEvent: DevicePowerTickEvent,
 hidePopoverEvent: HidePopoverEvent,
 powerTickEvent: PowerTickEvent,
 powerUpdatedEvent: PowerUpdatedEvent,
 preferenceEvent: PreferenceEvent,
 windowLoadedEvent: WindowLoadedEvent
 }>({
+deviceEvent: "device-event",
+devicePowerTickEvent: "device-power-tick-event",
 hidePopoverEvent: "hide-popover-event",
 powerTickEvent: "power-tick-event",
 powerUpdatedEvent: "power-updated-event",
@@ -39,9 +52,33 @@ windowLoadedEvent: "window-loaded-event"
 
 /** user-defined types **/
 
+export type Action = 
+/**
+ * A device has attached. The device reference belongs to the
+ * client. It must be explicitly released, or else it will leak.
+ */
+"Attached" | 
+/**
+ * A device has detached. The device object delivered will be
+ * the same as the one delivered in the Attached notification. This
+ * device reference does not need to be released.
+ */
+"Detached" | 
+/**
+ * This notification is delivered in response to
+ * 
+ * 1. A call to am::DeviceNotificationUnsubscribe().
+ * 2. An error occurred on one of the underlying notification systems
+ * (i.e. usbmuxd or mDNSResponder crashed or stopped responding).
+ * Unsubcribing and resubscribing may recover the notification system.
+ */
+"NotificationStopped" | "Paired"
 export type AdapterDetails = { adapterVoltage: number | null; isWireless: boolean | null; watts: number | null; name: string | null; current: number | null; description: string | null }
+export type DeviceEvent = { udid: string; name: string; interface: InterfaceType; action: Action }
+export type DevicePowerTickEvent = { udid: string; io: IORegistry }
 export type HidePopoverEvent = null
-export type IORegistry = { adapterDetails: AdapterDetails; powerTelemetryData: PowerTelemetryData; absoluteCapacity: number; amperage: number; voltage: number; appleRawBatteryVoltage: number; appleRawCurrentCapacity: number; appleRawMaxCapacity: number; currentCapacity: number; cycleCount: number; designCapacity: number; fullyCharged: boolean; instantAmperage: number; isCharging: boolean; maxCapacity: number; temperature: number; timeRemaining: number; updateTime: number }
+export type IORegistry = { adapterDetails: AdapterDetails; powerTelemetryData: PowerTelemetryData | null; absoluteCapacity: number; amperage: number; voltage: number; appleRawBatteryVoltage: number | null; appleRawCurrentCapacity: number; appleRawMaxCapacity: number; currentCapacity: number; cycleCount: number; designCapacity: number; fullyCharged: boolean; instantAmperage: number; isCharging: boolean; maxCapacity: number; temperature: number; timeRemaining: number; updateTime: number }
+export type InterfaceType = "Unknown" | "USB" | "WiFi"
 export type PowerTelemetryData = { adapterEfficiencyLoss: number; batteryPower: number; systemCurrentIn: number; systemEnergyConsumed: number; systemLoad: number; systemPowerIn: number; systemVoltageIn: number }
 export type PowerTickEvent = { io: IORegistry; smc: SMCPowerData }
 export type PowerUpdatedEvent = string
