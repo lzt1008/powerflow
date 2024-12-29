@@ -1,0 +1,9 @@
+[workspace]
+members = [
+  "src-tauri",
+  "crates/*"
+]
+resolver = "2"
+
+[workspace.dependencies]
+tpower = { path = "crates/tpower" }
