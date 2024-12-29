@@ -184,7 +184,7 @@ pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
 
 pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
     let mut rx = start_device_listener();
-    let mut timer = time::interval(Duration::from_millis(1000));
+    let mut timer = time::interval(Duration::from_millis(2000));
 
     let mut devices: HashMap<Device, ServiceConnection> = HashMap::new();
 
