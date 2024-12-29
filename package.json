@@ -15,6 +15,7 @@
     "@number-flow/vue": "^0.3.3",
     "@radix-icons/vue": "^1.0.0",
     "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-log": "~2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-positioner": "~2",
     "@tauri-apps/plugin-shell": "~2",

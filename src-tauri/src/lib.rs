@@ -1,7 +1,9 @@
-use std::collections::{HashMap, HashSet};
-use std::process;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::{
+    collections::{HashMap, HashSet},
+    process,
+    sync::Mutex,
+    time::Duration,
+};
 
 use data::{start_device_sender, start_sender, PowerTickEvent, SenderMessage};
 use event::{
@@ -17,11 +19,11 @@ use objc2_app_kit::{
 use scopefn::Run;
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use tauri::menu::{MenuBuilder, MenuItemBuilder};
-use tauri::tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent};
 use tauri::{
-    async_runtime, ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, State, Window,
-    WindowEvent,
+    async_runtime,
+    menu::{MenuBuilder, MenuItemBuilder},
+    tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, State, Window, WindowEvent,
 };
 use tauri_plugin_positioner::{Position, WindowExt};
 use tauri_specta::{collect_commands, collect_events, Event};
@@ -133,6 +135,7 @@ pub async fn run() {
     });
 
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
