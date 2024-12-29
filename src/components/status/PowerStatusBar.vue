@@ -51,6 +51,7 @@ const handle = watchEffect(() => {
     delete parts.systemTotal
   }
 
+
   let current = 0
   const sorted = Object.entries(parts)
     .sort((a, b) => b[1] - a[1])
@@ -60,7 +61,7 @@ const handle = watchEffect(() => {
       return ret
     })
 
-  const sum = power.value.systemPower + power.value.powerLoss
+  const sum = power.value.systemIn + power.value.powerLoss
   data.value = {
     parts: Object.entries(parts)
       .map(([key, value]) =>
