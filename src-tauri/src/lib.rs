@@ -76,13 +76,7 @@ fn get_device_name(
 #[tauri::command]
 #[specta::specta]
 fn get_mac_name() -> Option<String> {
-    let output = std::process::Command::new("scutil")
-        .arg("--get")
-        .arg("ComputerName")
-        .output()
-        .ok()?;
-
-    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    tpower::util::get_mac_name()
 }
 
 #[tauri::command]

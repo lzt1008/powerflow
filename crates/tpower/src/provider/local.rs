@@ -5,7 +5,7 @@ use ratatui::widgets::SparklineBar;
 use crate::{
     de::IORegistry,
     ffi::smc::SMCPowerData,
-    util::{get_mac_model, skip_until},
+    util::{get_mac_name, skip_until},
 };
 
 use super::{MergedPowerData, PowerStatistic, Resource};
@@ -27,7 +27,7 @@ impl Resource for LocalResource {
             .take()
             .expect("Local Power Resource must have SMC data");
 
-        if data.ioreg.update_time as u64 > self.last_update {
+        if data.ioreg.update_time > self.last_update {
             self.last_update = data.ioreg.update_time;
             return;
         }
@@ -115,11 +115,11 @@ impl Resource for LocalResource {
     }
 
     fn temperature(&self) -> f32 {
-        self.data.temperature as f32
+        self.data.temperature
     }
 
     fn name(&self) -> String {
-        get_mac_model().unwrap()
+        get_mac_name().unwrap()
     }
 
     fn smc(&self) -> Option<&SMCPowerData> {

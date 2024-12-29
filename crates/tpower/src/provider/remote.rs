@@ -1,22 +1,16 @@
 use std::{
     mem,
-    sync::mpsc::{self, Receiver},
-    thread,
     time::{Duration, SystemTime},
 };
 
-use core_foundation::{array::CFArray, base::TCFType, dictionary::CFDictionary};
+use core_foundation::{base::TCFType, dictionary::CFDictionary};
 use ratatui::widgets::SparklineBar;
 use thiserror::Error;
 
 use crate::{
     cfdic,
     de::{repr, IORegistry},
-    ffi::{
-        smc::SMCPowerData,
-        wrapper::{Device, ServiceConnection},
-        AMDCreateDeviceList,
-    },
+    ffi::{smc::SMCPowerData, wrapper::ServiceConnection},
     provider::PowerDataFrom,
     util::{dict_into, skip_until, DictParseError},
 };
@@ -160,14 +154,14 @@ pub enum DeviceDataError {
 }
 
 pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDataError> {
-    conn.send(
+    unsafe { conn.send(
         cfdic! {
             "EntryClass" = "IOPMPowerSource"
             "Request" = "IORegistry"
         }
         .as_concrete_TypeRef(),
     )
-    .map_err(DeviceDataError::Send)?;
+    .map_err(DeviceDataError::Send) }?;
 
     let response = unsafe {
         CFDictionary::wrap_under_create_rule(conn.receive().map_err(DeviceDataError::Receive)?)
@@ -177,53 +171,4 @@ pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDa
 
     // SAFETY: IORegistry and repr::IORegistry are disigned to be the same
     unsafe { mem::transmute(data.diagnostics.ioregistry) }
-}
-
-pub fn start_remote_channel(interval: Duration) -> Receiver<MergedPowerData> {
-    let (tx, rx) = mpsc::channel();
-
-    thread::spawn::<_, anyhow::Result<()>>(move || {
-        let list = unsafe { CFArray::wrap_under_create_rule(AMDCreateDeviceList()) };
-        let mut list = list
-            .into_iter()
-            .map(|x| Device::new(*x))
-            .collect::<Vec<_>>();
-
-        loop {
-            for device in &mut list {
-                device.prepare_device()?;
-
-                let conn = device.start_service("com.apple.mobile.diagnostics_relay");
-                conn.send(
-                    cfdic! {
-                        "EntryClass" = "IOPMPowerSource"
-                        "Request" = "IORegistry"
-                    }
-                    .as_concrete_TypeRef(),
-                )
-                .unwrap();
-
-                let response =
-                    unsafe { CFDictionary::wrap_under_create_rule(conn.receive().unwrap()) };
-
-                let data = dict_into::<repr::IORegistryDiagnostic>(response).unwrap();
-
-                tx.send(MergedPowerData {
-                    from: PowerDataFrom::Remote((
-                        device.udid.clone(),
-                        device.name(),
-                        device.interface_type(),
-                    )),
-                    ioreg: unsafe {
-                        mem::transmute::<repr::IORegistry, IORegistry>(data.diagnostics.ioregistry)
-                    },
-                    smc: None,
-                })?;
-            }
-
-            thread::sleep(interval);
-        }
-    });
-
-    rx
 }

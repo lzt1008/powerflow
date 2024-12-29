@@ -1,5 +1,3 @@
-use std::process::Command;
-
 use core_foundation::{
     base::{kCFAllocatorDefault, TCFType},
     data::CFData,
@@ -48,26 +46,12 @@ pub fn dict_into<T: DeserializeOwned>(data: CFDictionary) -> Result<T, DictParse
     Ok(plist::from_bytes::<T>(xml_data.bytes())?)
 }
 
-pub fn get_mac_model() -> Option<String> {
-    let res = Command::new("system_profiler")
-        .arg("SPSoftwareDataType")
+pub fn get_mac_name() -> Option<String> {
+    let output = std::process::Command::new("scutil")
+        .arg("--get")
+        .arg("ComputerName")
         .output()
         .ok()?;
 
-    String::from_utf8_lossy(&res.stdout)
-        .lines()
-        .filter_map(|line| line.split_once(':'))
-        .find(|(k, _)| k.trim() == "Computer Name")
-        .map(|(_, v)| v.trim().to_string())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_get_mac_model() {
-        let name = get_mac_model().unwrap();
-        println!("{name}");
-    }
+    Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }

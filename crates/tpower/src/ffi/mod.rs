@@ -34,7 +34,10 @@ pub struct AMDeviceNotification {
 
 // github.com/yury/cidre
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "specta", derive(specta::Type, serde::Deserialize, serde::Serialize))]
+#[cfg_attr(
+    feature = "specta",
+    derive(specta::Type, serde::Deserialize, serde::Serialize)
+)]
 #[non_exhaustive]
 #[repr(i32)]
 pub enum Action {
@@ -87,7 +90,10 @@ type AMDeviceNotificationCallback =
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "specta", derive(specta::Type, serde::Deserialize, serde::Serialize))]
+#[cfg_attr(
+    feature = "specta",
+    derive(specta::Type, serde::Deserialize, serde::Serialize)
+)]
 pub enum InterfaceType {
     Unknown = 0,
     USB = 1,

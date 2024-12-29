@@ -10,20 +10,11 @@ use io_kit_sys::{
     ret::kIOReturnSuccess, IOMasterPort, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
 };
-use std::{
-    ffi::CString,
-    mem,
-    ops::Deref,
-    sync::mpsc::{self, Receiver},
-    thread,
-};
+use std::{ffi::CString, mem, ops::Deref};
 
 use crate::{
     de::{repr, IORegistry},
-    ffi::{
-        smc::{SMCConnection, SMCPowerData, SMCReadSensor},
-        InterfaceType,
-    },
+    ffi::{smc::SMCPowerData, InterfaceType},
     util::dict_into,
 };
 use ratatui::widgets::SparklineBar;
@@ -141,28 +132,6 @@ impl Deref for MergedPowerData {
     }
 }
 
-pub fn start_mac_channel(interval: Duration) -> Receiver<MergedPowerData> {
-    let (tx, rx) = mpsc::channel();
-
-    let mut smc = SMCConnection::new("AppleSMC").unwrap();
-
-    thread::spawn::<_, anyhow::Result<()>>(move || loop {
-        let smc_data = smc.read_sensor();
-        let dic = get_mac_ioreg_dict()?;
-
-        let ioreg = dict_into::<repr::IORegistry>(dic).unwrap();
-
-        tx.send(MergedPowerData {
-            from: PowerDataFrom::Local,
-            smc: Some(smc_data),
-            ioreg: unsafe { mem::transmute(ioreg) },
-        })?;
-        thread::sleep(interval);
-    });
-
-    rx
-}
-
 #[derive(Debug, Default)]
 pub struct PowerStatistic {
     pub max_battery_power: f32,
@@ -202,21 +171,5 @@ impl PowerStatistic {
         if self.system_history.len() > 200 {
             self.system_history.pop_front();
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        log4rs::init_file("config/log4rs.yaml", Default::default()).unwrap();
-
-        let rx = start_mac_channel(Duration::from_millis(1000));
-
-        let data = rx.recv().unwrap();
-
-        println!("{data:#?}");
     }
 }

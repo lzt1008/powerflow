@@ -151,7 +151,7 @@ pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
     extern "C" fn callback(info: *const AMDeviceNotificationCallbackInfo, context: *mut c_void) {
         let tx = unsafe { Box::from_raw(context as *mut mpsc::Sender<DeviceMessage>) };
         let info = unsafe { *&*info };
-        let device = Device::new(info.device);
+        let device = unsafe { Device::new(info.device) };
 
         async_runtime::spawn(async move {
             tx.send(DeviceMessage {

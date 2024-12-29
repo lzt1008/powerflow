@@ -26,7 +26,7 @@ unsafe impl Send for ServiceConnection {}
 unsafe impl Sync for ServiceConnection {}
 
 impl ServiceConnection {
-    pub fn start(device: AMDeviceRef, service_name: &str) -> Self {
+    fn start(device: AMDeviceRef, service_name: &str) -> Self {
         unsafe {
             let service_name = cfstr!(service_name);
             let service_ptr: AMDServiceConnectionRef = null_mut();
@@ -46,7 +46,9 @@ impl ServiceConnection {
         }
     }
 
-    pub fn send(&self, message: CFDictionaryRef) -> Result<(), i32> {
+    /// # Safety
+    /// `message` must be a valid CFDictionaryRef
+    pub unsafe fn send(&self, message: CFDictionaryRef) -> Result<(), i32> {
         match unsafe {
             AMDServiceConnectionSendMessage(self.0, message, kCFPropertyListXMLFormat_v1_0)
         } {
@@ -78,7 +80,6 @@ pub struct Device {
     pub device: AMDeviceRef,
     pub udid: String,
     pub interface_type: InterfaceType,
-    // name: String,
 }
 
 unsafe impl Send for Device {}
@@ -101,23 +102,16 @@ pub enum DeviceError {
 }
 
 impl Device {
-    pub fn new(device: AMDeviceRef) -> Self {
+    /// # Safety
+    /// `device` must be a valid AMDeviceRef
+    pub unsafe fn new(device: AMDeviceRef) -> Self {
         let udid =
             unsafe { CFString::wrap_under_create_rule(AMDeviceCopyDeviceIdentifier(device)) }
                 .to_string();
-        // let name = unsafe {
-        //     CFString::wrap_under_create_rule(AMDeviceCopyValue(
-        //         device,
-        //         null(),
-        //         cfstr!("DeviceName").as_concrete_TypeRef(),
-        //     ) as CFStringRef)
-        // }
-        // .to_string();
         Self {
             device,
             udid,
             interface_type: unsafe { AMDeviceGetInterfaceType(device) },
-            // name: "".to_string(),
         }
     }
 
@@ -205,97 +199,3 @@ impl Drop for Device {
         self.disconnect();
     }
 }
-
-// pub trait CFDictionaryExt<K, V> {
-//     fn get_by_str(&self, key: &str) -> ItemRef<'_, V>;
-// }
-
-// impl<K, V> CFDictionaryExt<K, V> for CFDictionary<K, V>
-// where
-//     CFString: ToVoid<K>,
-//     V: FromVoid,
-//     // K: ToVoid<CFStringRef>,
-//     K: ToVoid<K>,
-// {
-//     fn get_by_str(&self, key: &str) -> ItemRef<'_, V> {
-//         self.get(CFString::new(key))
-//     }
-// }
-
-// response
-
-// let a = unsafe {
-//     CFNumber::wrap_under_get_rule(
-//         response
-//             .get(cfstr!("Diagnostics"))
-//             .get(cfstr!("IORegistry"))
-//             .get(cfstr!("Amperage"))
-//             .to_void() as CFNumberRef,
-//     )
-// };
-
-// let v = unsafe {
-//     CFNumber::wrap_under_get_rule(
-//         response
-//             .get(cfstr!("Diagnostics"))
-//             .get(cfstr!("IORegistry"))
-//             .get(cfstr!("Voltage"))
-//             .to_void() as CFNumberRef,
-//     )
-// };
-
-// println!(
-//     "power: {}watts",
-//     (a.to_i64()
-//         .expect("couldn't get amperage")
-//         .mul(v.to_i64().unwrap()) as f64)
-//         .div(1_000_000.0)
-// );
-
-// #[allow(unused_variables)]
-// extern "C" fn handle_am_device_notification(
-//     target: *const AMDeviceNotificationCallbackInfo,
-//     _args: *mut libc::c_void,
-// ) {
-//     let arc_ref = unsafe { &*(_args as *const RwLock<Vec<&AMDevice>>) };
-//     let device = unsafe { &*((*target).device as *const AMDevice) };
-// }
-
-// pub fn get_devices(_timeout: f64) -> Vec<&'static AMDevice> {
-//     let devices = Box::new(RwLock::new(Vec::<&AMDevice>::new()));
-//     let devices_ptr = Box::into_raw(devices);
-//     let mut not = MaybeUninit::uninit();
-//     unsafe {
-//         bridge::AMDeviceNotificationSubscribe(
-//             handle_am_device_notification,
-//             0,
-//             0,
-//             devices_ptr as *mut c_void,
-//             not.as_mut_ptr(),
-//         );
-//         // CFRunLoopRunInMode(kCFRunLoopDefaultMode, timeout, false as Boolean);
-//         CFRunLoopRun();
-//     }
-
-//     let devices = unsafe { Box::from_raw(devices_ptr) };
-
-//     devices.into_inner().unwrap()
-// }
-
-// pub fn get_udid(device: AMDeviceRef) -> String {
-//     let char_ptr = unsafe {
-//         let ns_uuid = AMDeviceCopyDeviceIdentifier(device);
-//         let c_str_ptr = CFStringGetCStringPtr(ns_uuid, kCFStringEncodingUTF8);
-//         CFRelease(ns_uuid as CFTypeRef);
-//         c_str_ptr
-//     };
-//     let c_str = unsafe { std::ffi::CStr::from_ptr(char_ptr) };
-//     String::from(c_str.to_str().unwrap())
-// }
-
-// pub unsafe fn disconnect(device: AMDeviceRef) {
-//     unsafe {
-//         AMDeviceStopSession(device);
-//         AMDeviceDisconnect(device);
-//     };
-// }
