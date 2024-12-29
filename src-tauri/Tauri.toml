@@ -36,6 +36,7 @@ focus = false
 [[app.windows]]
 label = "settings"
 url = "settings.html"
+titleBarStyle = "Overlay"
 title = "Settings"
 width = 700
 height = 800
