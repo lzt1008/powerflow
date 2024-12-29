@@ -36,7 +36,7 @@ settings:
   background_monitoring_desc: 在后台运行应用程序
   status_bar: 状态栏
   status_bar_desc: 状态栏中显示的信息类型
-  heatpipe_power: soc功率
+  heatpipe_power: SOC功率
   screen_power: 屏幕功率
   system_total: 系统总功率
   show_charging_power: 显示充电功率
