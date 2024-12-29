@@ -49,7 +49,7 @@ const power = usePower()
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          {{ power.io.cycleCount }}
+          {{ power.io.cycleCount }} {{ $t('times') }}
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">

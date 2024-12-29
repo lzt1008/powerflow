@@ -56,13 +56,12 @@ events.powerTickEvent.listen(async ({ payload }) => {
   trimStatistics(localPowerData.statistics)
 
   const levelRaw = calcBatteryLevel(localPowerData.io)
-  const sysPowerRaw = smc.systemTotal
 
   localPowerData.statistics.push({
     'time': new Date().toLocaleTimeString(),
-    'System Power': +(sysPowerRaw - (sysPowerRaw % 0.01)).toFixed(2),
+    'System Power': +smc.systemTotal.toFixed(2),
     'System In': smc.deliveryRate < 0.01 ? 0 : smc.deliveryRate,
-    'Battery Level': +(levelRaw - (levelRaw % 0.01)).toFixed(2),
+    'Battery Level': +levelRaw.toFixed(2),
     'Screen Power': smc.brightness || 0,
     'Heatpipe Power': smc.heatpipe || 0,
   })
@@ -207,7 +206,7 @@ function createPowerData(
   const isIOEmpty = Object.keys(io).length === 0
   const detail = io.adapterDetails
 
-  const base: Omit<PowerReturnBase, 'isCharging' | 'timeRemaining'> = {
+  const base: Omit<PowerReturnBase, 'isCharging' | 'timeRemaining' | 'batteryPower'> = {
     isLoading: isIOEmpty || vis.value === 'hidden',
     isReady: false,
     statistics,
@@ -220,9 +219,8 @@ function createPowerData(
     },
     batteryLevel: calcBatteryLevel(io),
     powerLoss: (io.powerTelemetryData?.adapterEfficiencyLoss ?? 0) / 1000,
-    temperature: (io.temperature || 0) / (isLocal ? 1 : 100),
+    temperature: (io.temperature || 0) / 100,
     systemIn: 0,
-    batteryPower: 0,
     systemPower: 0,
     fullyCharged: io.fullyCharged,
   }

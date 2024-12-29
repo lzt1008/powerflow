@@ -10,6 +10,7 @@ cycle_count: Cycle Count
 cycle_count_desc: Total number of cycles
 energy: Energy
 designed_capacity: Designed Capacity
+times: times
 
 status:
   on_battery: On Battery
@@ -25,6 +26,16 @@ status:
   heatpipe_power: SOC
   system_total: System
   system_other: Other
+
+flow:
+  screen_power: Screen Power
+  heatpipe_power: SOC Power
+  system_total: System Total
+  system_in: System In
+  battery_in: Battery In
+  battery_out: Battery Out
+  power_loss: Power Loss
+  adapter_power: Adapter Power
 
 settings:
   appearance: Appearance

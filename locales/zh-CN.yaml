@@ -10,6 +10,7 @@ cycle_count: 循环次数
 cycle_count_desc: 总循环次数
 energy: 能量
 designed_capacity: 设计容量
+times: 次
 status:
   charging_power: 充电功率
   offline: 离线
@@ -24,7 +25,15 @@ status:
   heatpipe_power: SOC
   system_total: 整机
   system_other: 其他
-
+flow:
+  screen_power: 屏幕功耗
+  heatpipe_power: SOC功耗
+  system_total: 系统总功耗
+  system_in: 系统总输入
+  battery_in: 电池充电功率
+  battery_out: 电池放电功率
+  power_loss: 损耗
+  adapter_power: 适配器功率
 settings:
   appearance: 外观
   theme: 主题
@@ -54,4 +63,3 @@ settings:
   license: 许可证
   author: 作者
   version: 版本
-

@@ -1,7 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import CustomChartTooltip from './CustomChartTooltip.vue'
 
+const { t } = useI18n()
 const power = usePower()
+
 const categories = computed(() => {
   const base = ['System Power'] as (keyof StatisticData)[]
   if (!power.value.isRemote) {
@@ -12,11 +15,26 @@ const categories = computed(() => {
   }
   return base
 })
+
+const localeMap = computed(() => ({
+  'System Power': t('flow.system_total'),
+  'Screen Power': t('flow.screen_power'),
+  'Heatpipe Power': t('flow.heatpipe_power'),
+  'System In': t('flow.system_in'),
+}))
+
+const localedData = computed(() => {
+  return power.value.statistics.map((item) => {
+    return Object.fromEntries(Object.entries(item).map(([key, value]) => [localeMap.value[key] || key, value]))
+  })
+})
+
+const localedCategories = computed(() => categories.value.map(item => localeMap.value[item] || item))
 </script>
 
 <template>
-  <Card class="w-full space-y-4">
-    <CardHeader class="pb-0">
+  <Card class="w-full space-y-8 relative">
+    <CardHeader class="pb-0 text-xl">
       <CardTitle>
         {{ $t('power_usage') }}
       </CardTitle>
@@ -25,11 +43,11 @@ const categories = computed(() => {
       <Skeleton v-if="power.isLoading" class="w-full h-[240px]" />
       <LineChart
         v-else
-        class="w-full h-[240px]"
+        class="w-full h-[240px] font-bold"
         index="time"
         :y-formatter="(value) => `${value}W`"
-        :data="power?.statistics"
-        :categories
+        :data="localedData"
+        :categories="localedCategories"
         :custom-tooltip="CustomChartTooltip"
       />
     </CardContent>

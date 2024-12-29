@@ -53,7 +53,7 @@ function handleLegendItemClick(d: BulletLegendItemInterface, i: number) {
 
 <template>
   <div :class="cn('w-full h-[400px] flex flex-col items-end', $attrs.class ?? '')">
-    <ChartLegend v-if="showLegend" v-model:items="legendItems" @legend-item-click="handleLegendItemClick" />
+    <ChartLegend v-if="showLegend" class="absolute top-5 right-4" v-model:items="legendItems" @legend-item-click="handleLegendItemClick" />
 
     <VisXYContainer
       :margin="{ left: 20, right: 20 }"

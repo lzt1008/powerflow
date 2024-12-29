@@ -99,7 +99,7 @@ watchEffect(() => {
     >
       <template #popper>
         <span>{{ locale }}</span>
-        <span class="ml-1 font-mono font-bold">{{ value.toFixed(1) }}w</span>
+        <span class="ml-1 font-mono font-extrabold">{{ value.toFixed(1) }}w</span>
       </template>
       <div
         class="absolute top-0 bottom-0 transition-all duration-500"

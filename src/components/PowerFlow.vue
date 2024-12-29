@@ -13,13 +13,27 @@ interface FlowItemProps {
   color: string
 }
 
+const colorMap = {
+  'text-yellow-500': 'text-yellow-950 hover:bg-yellow-500/5 hover:border-yellow-500/20',
+  'text-green-500': 'text-green-950 hover:bg-green-500/5 hover:border-green-500/20',
+  'text-blue-500': 'text-blue-950 hover:bg-blue-500/5 hover:border-blue-500/20',
+  'text-cyan-500': 'text-cyan-950 hover:bg-cyan-500/5 hover:border-cyan-500/20',
+  'text-indigo-500': 'text-indigo-950 hover:bg-indigo-500/5 hover:border-indigo-500/20',
+}
+
 const FlowItem: Component = ({ tooltip, icon, color }: FlowItemProps, { slots }) => {
   return (
     <CommonTooltip content={tooltip} as-child>
-      <div class="w-24 shrink-0 flex justify-center items-center gap-2 rounded-lg border bg-background px-2 py-1.5 cursor-pointer">
+      <div
+        class={`
+        w-24 shrink-0 flex justify-center items-center gap-2
+        rounded-lg border bg-background px-2 py-1.5 cursor-pointer
+        transition-colors ${colorMap[color]}`}
+      >
         { h(icon, { class: `h-4 w-4 ${color}` }) }
         <span class="text-xs font-medium">
           { slots.default?.() }
+          <span class="ml-[1px]">w</span>
         </span>
       </div>
     </CommonTooltip>
@@ -30,7 +44,7 @@ const power = usePower()
 
 <template>
   <Card class="flex-1">
-    <CardHeader>
+    <CardHeader class="text-xl">
       <CardTitle>{{ $t('power_flow') }}</CardTitle>
     </CardHeader>
     <CardContent>
@@ -42,16 +56,16 @@ const power = usePower()
       >
         <FlowItem
           v-if="power.isCharging"
-          tooltip="Adapter power"
+          :tooltip="$t('flow.adapter_power')"
           :icon="CloudLightningIcon"
           color="text-yellow-500"
         >
-          {{ formatter.format(power.systemIn + power.powerLoss / 1000) }}w
+          {{ formatter.format(power.systemIn + power.powerLoss / 1000) }}
         </FlowItem>
 
         <CommonTooltip
           v-if="power.isCharging && power.io.powerTelemetryData?.adapterEfficiencyLoss !== undefined"
-          :content="`(loss ${power.io.powerTelemetryData?.adapterEfficiencyLoss}mw)`"
+          :content="`${$t('flow.power_loss')}: ${power.io.powerTelemetryData.adapterEfficiencyLoss}mw`"
           as-child
         >
           <Shimmer
@@ -69,21 +83,21 @@ const power = usePower()
 
         <div class="flex flex-col items-center gap-2 bg-muted/50 rounded-lg border p-2">
           <div v-if="!power.isRemote" class="flex gap-4" color="text-blue-500">
-            <FlowItem tooltip="Power of the screen" :icon="Monitor" color="text-blue-500">
-              {{ formatter.format(power.screenPower || 0) }}w
+            <FlowItem :tooltip="$t('flow.screen_power')" :icon="Monitor" color="text-blue-500">
+              {{ formatter.format(power.screenPower || 0) }}
             </FlowItem>
 
-            <FlowItem tooltip="Power of CPU" :icon="Cpu" color="text-indigo-500">
-              {{ formatter.format(power.heatpipePower || 0) }}w
+            <FlowItem :tooltip="$t('flow.heatpipe_power')" :icon="Cpu" color="text-indigo-500">
+              {{ formatter.format(power.heatpipePower || 0) }}
             </FlowItem>
           </div>
 
           <FlowItem
-            tooltip="System total power"
+            :tooltip="$t('flow.system_total')"
             :icon="power.isRemote ? Smartphone : Laptop"
             color="text-cyan-500"
           >
-            {{ formatter.format(power.systemPower) }}w
+            {{ formatter.format(power.systemPower) }}
           </FlowItem>
         </div>
 
@@ -99,8 +113,8 @@ const power = usePower()
           <div class="h-1 cursor-pointer" />
         </Shimmer>
 
-        <FlowItem tooltip="Battery power" :icon="Battery" color="text-green-500">
-          {{ formatter.format(power.isCharging ? power.systemIn - power.systemPower : power.batteryPower) }}w
+        <FlowItem :tooltip="power.isCharging ? $t('flow.battery_in') : $t('flow.battery_out')" :icon="Battery" color="text-green-500">
+          {{ formatter.format(power.batteryPower) }}
         </FlowItem>
       </div>
     </CardContent>
