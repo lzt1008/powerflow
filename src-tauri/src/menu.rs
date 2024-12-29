@@ -35,7 +35,7 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             // println!("Unknown menu event: {}", event);
         }
     });
-    let app_menu = SubmenuBuilder::new(app, "Spacedrive")
+    let app_menu = SubmenuBuilder::new(app, "powerflow")
         .about(Some(
             AboutMetadataBuilder::new()
                 .authors(Some(vec!["Samuel Lyon.".to_string()]))
@@ -57,11 +57,13 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .quit()
         .build()?;
 
+    let view_menu = SubmenuBuilder::new(app, "View").fullscreen().build()?;
+
     let menu = MenuBuilder::new(app)
         .item(&app_menu)
         // .item(&file_menu)
         // .item(&edit_menu)
-        // .item(&view_menu)
+        .item(&view_menu)
         // .item(&window_menu)
         .build()?;
 
