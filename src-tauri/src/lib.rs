@@ -214,7 +214,7 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
         },
         "popover" => match event {
             WindowEvent::Focused(focused) if !focused => {
-                window.hide().unwrap();
+                HidePopoverEvent.emit(window.app_handle()).unwrap();
             }
             _ => (),
         },
