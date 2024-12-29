@@ -34,7 +34,7 @@ const localedCategories = computed(() => categories.value.map(item => localeMap.
 
 <template>
   <Card class="w-full space-y-8 relative">
-    <CardHeader class="pb-0 text-xl">
+    <CardHeader class="pb-0">
       <CardTitle>
         {{ $t('power_usage') }}
       </CardTitle>

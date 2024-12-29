@@ -44,7 +44,7 @@ const power = usePower()
 
 <template>
   <Card class="flex-1">
-    <CardHeader class="text-xl">
+    <CardHeader>
       <CardTitle>{{ $t('power_flow') }}</CardTitle>
     </CardHeader>
     <CardContent>
