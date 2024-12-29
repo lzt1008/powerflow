@@ -30,6 +30,7 @@ tauri = { version = "2", features = [
 ] }
 tauri-plugin-opener = "2"
 tauri-plugin-positioner = { version = "2.0.0", features = [ "tray-icon" ] }
+tauri-plugin-notification = "2"
 tauri-plugin-pinia = "0.10"
 tauri-plugin-shell = "2"
 tauri-plugin-log = "2"
