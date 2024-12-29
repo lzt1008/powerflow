@@ -1,4 +1,4 @@
-import { commands, events } from '@/bindings'
+import { events } from '@/bindings'
 import { useI18n } from 'vue-i18n'
 
 export function useSetup() {
@@ -9,11 +9,10 @@ export function useSetup() {
 
   i18n.locale.value = preferedLang.value[0]
 
-  const toggleDark = () => {
+  const toggleDark = async () => {
     document.documentElement.classList.toggle('dark', preference.theme === 'system'
       ? preferDark.value
       : preference.theme === 'dark')
-    commands.switchTheme(preference.theme)
   }
 
   preference.$tauri.start().then(() => {
@@ -21,7 +20,7 @@ export function useSetup() {
     i18n.locale.value = preference.language
   })
 
-  watchEffect(toggleDark)
+  watch(() => preference.theme, toggleDark)
 
   events.preferenceEvent.listen(({ payload }) => {
     if ('theme' in payload) {

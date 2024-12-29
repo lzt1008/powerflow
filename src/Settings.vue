@@ -92,9 +92,8 @@ function SettingsSection(props: SettingsSectionProps) {
 </script>
 
 <template>
-  <div
-    class="space-y-8 p-6 bg-background overflow-auto h-dvh"
-  >
+  <div data-tauri-drag-region class="h-6" />
+  <div class="space-y-8 p-6 bg-background overflow-auto h-dvh">
     <!-- Appearance Section -->
     <section class="space-y-8">
       <SettingsSection :title="$t('settings.appearance')" :icon="Eye" />
