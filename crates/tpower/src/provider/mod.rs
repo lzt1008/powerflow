@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, time::Duration};
+use std::{collections::VecDeque, ffi::CString, mem, ops::Deref, time::Duration};
 
 use anyhow::bail;
 use core_foundation::{
@@ -10,14 +10,13 @@ use io_kit_sys::{
     ret::kIOReturnSuccess, IOMasterPort, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
 };
-use std::{ffi::CString, mem, ops::Deref};
+use ratatui::widgets::SparklineBar;
 
 use crate::{
     de::{repr, IORegistry},
     ffi::{smc::SMCPowerData, InterfaceType},
     util::dict_into,
 };
-use ratatui::widgets::SparklineBar;
 
 pub mod local;
 pub mod remote;

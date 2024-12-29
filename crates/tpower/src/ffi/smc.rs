@@ -1,18 +1,13 @@
-use core::mem::size_of;
-use core::str;
-use io_kit_sys::types::{io_connect_t, io_service_t};
+use core::{mem::size_of, str};
+use std::{collections::HashMap, ffi::CString, str::FromStr};
+
 use io_kit_sys::{
+    types::{io_connect_t, io_service_t},
     IOConnectCallStructMethod, IOIteratorNext, IOMasterPort, IOObjectRelease, IOServiceClose,
     IOServiceGetMatchingServices, IOServiceMatching, IOServiceOpen,
 };
-use mach::kern_return;
-use mach::kern_return::kern_return_t;
-use mach::port::mach_port_t;
-use mach::traps::mach_task_self;
+use mach::{kern_return, kern_return::kern_return_t, port::mach_port_t, traps::mach_task_self};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::ffi::CString;
-use std::str::FromStr;
 
 // Kernel values
 const KERNEL_INDEX_SMC: i32 = 2;

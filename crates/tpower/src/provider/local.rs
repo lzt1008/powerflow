@@ -2,13 +2,12 @@ use std::time::Duration;
 
 use ratatui::widgets::SparklineBar;
 
+use super::{MergedPowerData, PowerStatistic, Resource};
 use crate::{
     de::IORegistry,
     ffi::smc::SMCPowerData,
     util::{get_mac_name, skip_until},
 };
-
-use super::{MergedPowerData, PowerStatistic, Resource};
 
 #[derive(Debug, Default)]
 pub struct LocalResource {

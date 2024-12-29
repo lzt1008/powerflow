@@ -1,9 +1,9 @@
 use std::marker::{PhantomData, PhantomPinned};
 
-use core_foundation::propertylist::CFPropertyListFormat;
-use core_foundation::string::CFStringRef;
-use core_foundation::{array::CFArrayRef, dictionary::CFDictionaryRef};
-
+use core_foundation::{
+    array::CFArrayRef, dictionary::CFDictionaryRef, propertylist::CFPropertyListFormat,
+    string::CFStringRef,
+};
 use libc::{c_char, c_void};
 
 pub mod smc;

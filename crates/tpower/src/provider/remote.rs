@@ -7,6 +7,7 @@ use core_foundation::{base::TCFType, dictionary::CFDictionary};
 use ratatui::widgets::SparklineBar;
 use thiserror::Error;
 
+use super::{MergedPowerData, PowerStatistic, Resource};
 use crate::{
     cfdic,
     de::{repr, IORegistry},
@@ -14,8 +15,6 @@ use crate::{
     provider::PowerDataFrom,
     util::{dict_into, skip_until, DictParseError},
 };
-
-use super::{MergedPowerData, PowerStatistic, Resource};
 
 #[derive(Debug, Default)]
 pub struct RemoteResource {
@@ -154,14 +153,16 @@ pub enum DeviceDataError {
 }
 
 pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDataError> {
-    unsafe { conn.send(
-        cfdic! {
-            "EntryClass" = "IOPMPowerSource"
-            "Request" = "IORegistry"
-        }
-        .as_concrete_TypeRef(),
-    )
-    .map_err(DeviceDataError::Send) }?;
+    unsafe {
+        conn.send(
+            cfdic! {
+                "EntryClass" = "IOPMPowerSource"
+                "Request" = "IORegistry"
+            }
+            .as_concrete_TypeRef(),
+        )
+        .map_err(DeviceDataError::Send)
+    }?;
 
     let response = unsafe {
         CFDictionary::wrap_under_create_rule(conn.receive().map_err(DeviceDataError::Receive)?)
