@@ -6,7 +6,7 @@ const power = usePower()
 const { t } = useI18n()
 
 const colors = [
-  'bg-green-500',
+  // 'bg-green-500',
   'bg-green-600',
   'bg-green-700',
   'bg-green-800',
@@ -51,7 +51,6 @@ const handle = watchEffect(() => {
     delete parts.systemTotal
   }
 
-
   let current = 0
   const sorted = Object.entries(parts)
     .sort((a, b) => b[1] - a[1])
@@ -61,7 +60,9 @@ const handle = watchEffect(() => {
       return ret
     })
 
-  const sum = power.value.systemIn + power.value.powerLoss
+  const sum = power.value.isCharging
+    ? power.value.systemIn + power.value.powerLoss
+    : power.value.systemPower
   data.value = {
     parts: Object.entries(parts)
       .map(([key, value]) =>
@@ -88,7 +89,7 @@ watchEffect(() => {
   <!-- Not Charging: total = screen + heatpipe + system other -->
   <div
     v-if="data"
-    class="relative h-4 overflow-hidden rounded flex transition-all duration-500"
+    class="relative h-3 overflow-hidden rounded flex transition-all duration-500"
     :class="[hovered ? '' : 'bg-green-500']"
     @mouseleave="hovered = null"
   >
