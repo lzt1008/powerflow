@@ -205,7 +205,6 @@ pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
                     }
                 }
                 Some(DeviceMessage { device, action }) = rx.recv() => {
-
                     match action {
                         Action::Attached => {
                             // unwrap pair

@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
-use tpower::{de::IORegistry, ffi::{Action, InterfaceType}};
+use tpower::{
+    de::IORegistry,
+    ffi::{Action, InterfaceType},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
 #[serde(rename_all = "kebab-case")]
