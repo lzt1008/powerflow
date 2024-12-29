@@ -30,6 +30,14 @@ const localedData = computed(() => {
 })
 
 const localedCategories = computed(() => categories.value.map(item => localeMap.value[item] || item))
+
+// needs to force update chart when categories change, a bug of chart
+const loading = ref(false)
+watch([localeMap, categories.value], async () => {
+  loading.value = true
+  await nextTick()
+  loading.value = false
+})
 </script>
 
 <template>
@@ -40,12 +48,12 @@ const localedCategories = computed(() => categories.value.map(item => localeMap.
       </CardTitle>
     </CardHeader>
     <CardContent>
-      <Skeleton v-if="power.isLoading" class="w-full h-[240px]" />
+      <Skeleton v-if="power.isLoading || loading" class="w-full h-[240px]" />
       <LineChart
         v-else
         class="w-full h-[240px] font-bold"
         index="time"
-        :y-formatter="(value) => `${value}W`"
+        :y-formatter="(value) => `${value}w`"
         :data="localedData"
         :categories="localedCategories"
         :custom-tooltip="CustomChartTooltip"
