@@ -20,7 +20,7 @@ export function useSetup() {
     i18n.locale.value = preference.language
   })
 
-  watch(() => preference.theme, toggleDark)
+  watch([preferDark, () => preference.theme], toggleDark)
 
   events.preferenceEvent.listen(({ payload }) => {
     if ('theme' in payload) {
