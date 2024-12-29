@@ -29,13 +29,13 @@ tauri = { version = "2", features = [
   "config-toml"
 ] }
 tauri-plugin-opener = "2"
+tauri-plugin-positioner = { version = "2.0.0", features = [ "tray-icon" ] }
+tauri-plugin-pinia = "0.10"
+tauri-plugin-shell = "2"
+tauri-plugin-log = "2"
 serde = { version = "1", features = [ "derive" ] }
 serde_json = "1"
 tokio = { version = "1.42.0", features = [ "full" ] }
-tauri-plugin-positioner = { version = "2.0.0", features = [ "tray-icon" ] }
-tauri-plugin-pinia = "0.10"
-cocoa = "0.26.0"
-objc = "0.2.7"
 specta = { version = "=2.0.0-rc.20", features = [
   "serde",
   "serde_json"
@@ -49,8 +49,6 @@ strum = "0.26.3"
 objc2 = "0.5.2"
 objc2-app-kit = "0.2.2"
 objc2-foundation = "0.2.2"
-tauri-plugin-shell = "2"
 log = "0.4.22"
 thiserror = "2.0.9"
 scopefn = "0.0.2"
-tauri-plugin-log = "2"
