@@ -18,6 +18,14 @@ status:
   system_power: System Power
   to_full: to full
   to_empty: to empty
+  fully_charged: Fully Charged
+  battery_in: Battery In
+  power_loss: Power Loss
+  screen_power: Screen
+  heatpipe_power: SOC
+  system_total: System
+  system_other: Other
+
 settings:
   appearance: Appearance
   theme: Theme

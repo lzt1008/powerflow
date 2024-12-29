@@ -186,6 +186,7 @@ interface PowerReturnBase {
   systemIn: number
   powerLoss: number
   temperature: number
+  fullyCharged: boolean
 }
 
 interface LocalPowerReturn extends PowerReturnBase {
@@ -218,11 +219,12 @@ function createPowerData(
       name: detail?.name || detail?.description || '',
     },
     batteryLevel: calcBatteryLevel(io),
-    powerLoss: io.powerTelemetryData?.adapterEfficiencyLoss ?? 0,
-    temperature: (io.temperature || 0) / (isLocal ? 1 : 100), // 远程可能是 *100
+    powerLoss: (io.powerTelemetryData?.adapterEfficiencyLoss ?? 0) / 1000,
+    temperature: (io.temperature || 0) / (isLocal ? 1 : 100),
     systemIn: 0,
     batteryPower: 0,
     systemPower: 0,
+    fullyCharged: io.fullyCharged,
   }
 
   if (isLocal) {

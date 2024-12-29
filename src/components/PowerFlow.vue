@@ -50,7 +50,7 @@ const power = usePower()
         </FlowItem>
 
         <CommonTooltip
-          v-if="power.isCharging && power.io.powerTelemetryData?.adapterEfficiencyLoss"
+          v-if="power.isCharging && power.io.powerTelemetryData?.adapterEfficiencyLoss !== undefined"
           :content="`(loss ${power.io.powerTelemetryData?.adapterEfficiencyLoss}mw)`"
           as-child
         >

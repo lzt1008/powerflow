@@ -17,6 +17,14 @@ status:
   system_power: 系统功率
   to_full: 充满
   to_empty: 耗尽
+  fully_charged: 已充满
+  battery_in: 电池输入
+  power_loss: 损耗
+  screen_power: 屏幕
+  heatpipe_power: SOC
+  system_total: 整机
+  system_other: 其他
+
 settings:
   appearance: 外观
   theme: 主题

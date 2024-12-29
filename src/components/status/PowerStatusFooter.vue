@@ -30,17 +30,20 @@ const power = usePower()
         class="text-sm font-medium truncate"
         :class="power.isCharging ? 'text-green-500' : 'text-muted-foreground'"
       >
-        <span class="font-semibold">{{
-          formatDistanceToNow(
-            addMinutes(new Date(), power.timeRemaining),
-            { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
-          )
-        }}</span>
-        <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
+        <span v-if="power.isCharging && power.fullyCharged">{{ $t('status.fully_charged') }}</span>
+        <template v-else>
+          <span class="font-semibold">{{
+            formatDistanceToNow(
+              addMinutes(new Date(), power.timeRemaining),
+              { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
+            )
+          }}</span>
+          <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
+        </template>
       </div>
       <Skeleton v-else class="w-32 h-5" />
     </div>
-    <Progress v-if="!power.isLoading" :model-value="isNaN(power?.batteryLevel) ? 0 : power?.batteryLevel" />
-    <Skeleton v-else class="w-full h-2" />
+    <PowerStatusBar v-if="!power.isLoading" />
+    <Skeleton v-else class="w-full" />
   </div>
 </template>
