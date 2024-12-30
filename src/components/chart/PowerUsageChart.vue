@@ -33,7 +33,7 @@ const localedCategories = computed(() => categories.value.map(item => localeMap.
 
 // needs to force update chart when categories change, a bug of chart
 const loading = ref(false)
-watch([localeMap, categories.value], async () => {
+watch([localeMap, () => categories.value], async () => {
   loading.value = true
   await nextTick()
   loading.value = false
