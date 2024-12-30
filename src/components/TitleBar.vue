@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { commands } from '@/bindings'
-import { LaptopIcon, MobileIcon, Share2Icon } from '@radix-icons/vue'
-import { SettingsIcon } from 'lucide-vue-next'
+import { LaptopIcon, MobileIcon } from '@radix-icons/vue'
+import { History, SettingsIcon } from 'lucide-vue-next'
+import CommonTooltip from './CommonTooltip.vue'
 
 const tab = useTab()
 const data = usePowerData()
@@ -11,7 +12,6 @@ const {
   tabNameLoading,
   shouldDisplayShadow,
 } = useTitlebar()
-
 </script>
 
 <template>
@@ -54,16 +54,20 @@ const {
         </span>
       </div>
     </div>
-    <div class="flex gap-2">
+    <div class="flex gap-2 h-min">
       <div class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
-        <Share2Icon class="text-muted-foreground size-5" />
+        <CommonTooltip content="History" as-child>
+          <History :stroke-width="1.8" class="text-muted-foreground size-5" />
+        </CommonTooltip>
       </div>
       <div class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer">
-        <SettingsIcon
-          :stroke-width="1.5"
-          class="text-muted-foreground size-5"
-          @click="commands.openSettings()"
-        />
+        <CommonTooltip content="Settings" as-child>
+          <SettingsIcon
+            :stroke-width="1.8"
+            class="text-muted-foreground size-5"
+            @click="commands.openSettings()"
+          />
+        </CommonTooltip>
       </div>
     </div>
   </div>
