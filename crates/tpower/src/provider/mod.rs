@@ -1,21 +1,29 @@
-use std::{collections::VecDeque, ffi::CString, mem, ops::Deref, time::Duration};
+use std::{
+    collections::VecDeque,
+    ffi::CString,
+    mem,
+    ops::{Deref, Div},
+    time::Duration,
+};
 
 use anyhow::bail;
 use core_foundation::{
     base::{kCFAllocatorDefault, mach_port_t, TCFType},
     dictionary::{CFDictionary, CFMutableDictionaryRef},
 };
+use derive_more::Add;
 use enum_dispatch::enum_dispatch;
 use io_kit_sys::{
     ret::kIOReturnSuccess, IOMasterPort, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
 };
 use ratatui::widgets::SparklineBar;
+use serde::{Deserialize, Serialize};
 
 use crate::{
     de::{repr, IORegistry},
     ffi::{smc::SMCPowerData, InterfaceType},
-    util::dict_into,
+    util::{dict_into, skip_until},
 };
 
 pub mod local;
@@ -49,24 +57,9 @@ pub trait Resource {
 
     fn time_remain(&self) -> Duration;
 
-    // Statistics
-    fn max_battery_power(&self) -> f32;
+    fn last_update(&self) -> Duration;
 
-    fn max_input_power(&self) -> f32;
-
-    fn max_system_power(&self) -> f32;
-
-    fn battery_history(&self, width: usize) -> Vec<SparklineBar>;
-
-    fn input_history(&self, width: usize) -> Vec<SparklineBar>;
-
-    fn system_history(&self, width: usize) -> Vec<SparklineBar>;
-
-    fn last_update(&self) -> Duration {
-        Duration::from_secs(0)
-    }
-
-    fn is_realtime(&self) -> bool;
+    fn is_local(&self) -> bool;
 
     fn temperature(&self) -> f32;
 
@@ -82,6 +75,142 @@ pub trait Resource {
 pub enum PowerResource {
     Local(LocalResource),
     Remote(RemoteResource),
+}
+
+#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct NormalizedResource {
+    pub is_local: bool,
+    pub is_charging: bool,
+    pub time_remain: Duration,
+    pub last_update: i64,
+    #[serde(flatten)]
+    pub data: NormalizedData,
+}
+
+#[derive(Debug, Clone, Copy, Default, Add, Deserialize, Serialize)]
+#[cfg_attr(feature = "specta", derive(specta::Type))]
+#[serde(rename_all = "camelCase")]
+pub struct NormalizedData {
+    pub system_in: f32,
+    pub system_load: f32,
+    pub battery_power: f32,
+    pub adapter_power: f32,
+    /// Nan if not available
+    pub brightness_power: f32,
+    /// Nan if not available
+    pub heatpipe_power: f32,
+    pub battery_level: i32,
+    pub absolute_battery_level: f32,
+    pub temperature: f32,
+}
+
+impl NormalizedData {
+    pub fn max_with(self, other: &Self) -> Self {
+        Self {
+            system_in: self.system_in.max(other.system_in),
+            system_load: self.system_load.max(other.system_load),
+            battery_power: self.battery_power.max(other.battery_power),
+            adapter_power: self.adapter_power.max(other.adapter_power),
+            battery_level: self.battery_level.max(other.battery_level),
+            absolute_battery_level: self
+                .absolute_battery_level
+                .max(other.absolute_battery_level),
+            temperature: self.temperature.max(other.temperature),
+            brightness_power: self.brightness_power.max(other.brightness_power),
+            heatpipe_power: self.heatpipe_power.max(other.heatpipe_power),
+        }
+    }
+}
+
+impl Div<f32> for NormalizedData {
+    type Output = Self;
+
+    fn div(self, rhs: f32) -> Self::Output {
+        Self {
+            system_in: self.system_in / rhs,
+            system_load: self.system_load / rhs,
+            battery_power: self.battery_power / rhs,
+            adapter_power: self.adapter_power / rhs,
+            brightness_power: self.brightness_power / rhs,
+            heatpipe_power: self.heatpipe_power / rhs,
+            battery_level: self.battery_level / rhs as i32,
+            absolute_battery_level: self.absolute_battery_level / rhs,
+            temperature: self.temperature / rhs,
+        }
+    }
+}
+
+impl Deref for NormalizedResource {
+    type Target = NormalizedData;
+
+    fn deref(&self) -> &Self::Target {
+        &self.data
+    }
+}
+
+impl From<&IORegistry> for NormalizedResource {
+    fn from(io: &IORegistry) -> Self {
+        let (system_in, system_load, battery_power, adapter_power) = if let Some(d) = io.ptd() {
+            (
+                d.system_power_in as f32 / 1000.,
+                d.system_load as f32 / 1000.,
+                d.battery_power as f32 / 1000.,
+                (d.system_power_in + d.adapter_efficiency_loss) as f32 / 1000.,
+            )
+        } else {
+            Default::default()
+        };
+
+        Self {
+            is_local: false,
+            is_charging: io.is_charging,
+            time_remain: Duration::from_secs(io.time_remaining as u64 * 60),
+            last_update: io.update_time,
+            data: NormalizedData {
+                system_in,
+                system_load,
+                battery_power,
+                adapter_power,
+                brightness_power: 0.,
+                heatpipe_power: 0.,
+                battery_level: io.current_capacity,
+                absolute_battery_level: io.current_capacity as f32 / io.max_capacity as f32 * 100.,
+                temperature: io.temperature as f32 / 100.,
+            },
+        }
+    }
+}
+
+impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
+    fn from((io, smc): (&IORegistry, &SMCPowerData)) -> Self {
+        Self {
+            is_local: true,
+            last_update: io.update_time,
+            is_charging: smc.is_charging(),
+            time_remain: Duration::from_secs_f32(
+                60.0 * if smc.is_charging() {
+                    smc.time_to_full
+                } else {
+                    smc.time_to_empty
+                },
+            ),
+            data: NormalizedData {
+                system_in: smc.delivery_rate,
+                system_load: smc.system_total,
+                battery_power: smc.battery_rate,
+                brightness_power: smc.brightness,
+                heatpipe_power: smc.heatpipe,
+                battery_level: io.current_capacity,
+                absolute_battery_level: io.current_capacity as f32 / io.max_capacity as f32 * 100.,
+                temperature: smc.temperature,
+                adapter_power: smc.delivery_rate
+                    + io.ptd()
+                        .map_or(0.0, |d| d.adapter_efficiency_loss as f32 / 1000.),
+            },
+        }
+    }
 }
 
 pub fn get_mac_ioreg_dict() -> anyhow::Result<CFDictionary> {
@@ -170,5 +299,23 @@ impl PowerStatistic {
         if self.system_history.len() > 200 {
             self.system_history.pop_front();
         }
+    }
+
+    pub fn battery_history(&self, width: usize) -> Vec<SparklineBar> {
+        skip_until(self.battery_history.iter(), width)
+            .map(|v| SparklineBar::from(*v))
+            .collect()
+    }
+
+    pub fn input_history(&self, width: usize) -> Vec<SparklineBar> {
+        skip_until(self.input_history.iter(), width)
+            .map(|v| SparklineBar::from(*v))
+            .collect()
+    }
+
+    pub fn system_history(&self, width: usize) -> Vec<SparklineBar> {
+        skip_until(self.system_history.iter(), width)
+            .map(|v| SparklineBar::from(*v))
+            .collect()
     }
 }

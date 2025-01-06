@@ -21,14 +21,26 @@ watchEffect(() => {
     <TitleBar />
     <div
       ref="target"
-      class="h-[calc(100vh-52px)] pb-4 overflow-scroll "
+      class="h-[calc(100vh-52px)] pb-4"
     >
       <TabsContent
         v-for="udid in ['local', ...Object.keys(data.remote)]"
         :key="udid"
         :value="udid"
+        class="overflow-hidden h-full"
       >
-        <MainContent />
+        <RouterView v-slot="{ Component }">
+          <Transition
+            enter-from-class="opacity-0"
+            leave-to-class="opacity-0"
+            enter-to-class="opacity-100"
+            leave-from-class="opacity-100"
+            enter-active-class="duration-300"
+            leave-active-class="duration-300"
+          >
+            <Component :is="Component" />
+          </Transition>
+        </RouterView>
       </TabsContent>
     </div>
   </Tabs>

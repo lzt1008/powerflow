@@ -4,13 +4,16 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-specta = ["dep:specta", "dep:specta-typescript"]
+specta = [
+  "dep:specta",
+  "dep:specta-typescript"
+]
 
 [dependencies]
 core-foundation = "0.10.0"
 libc = "0.2.168"
 mach = "0.3.2"
-scopefn = { version = "0.0.2", features = ["run_if"] }
+scopefn = { version = "0.0.2", features = [ "run_if" ] }
 ratatui = "0.29.0"
 crossterm = "0.28.1"
 thiserror = "2.0.6"
@@ -22,10 +25,14 @@ humantime = "2.1.0"
 indexmap = "2.7.0"
 enum_dispatch = "0.3.13"
 plist = "1.7.0"
-serde = { version = "1.0.216", features = ["derive"] }
+serde = { version = "1.0.216", features = [ "derive" ] }
 specta = { optional = true, version = "=2.0.0-rc.20", features = [
   "serde",
   "serde_json",
   "derive",
 ] }
 specta-typescript = { optional = true, version = "0.0.7" }
+derive_more = { version = "1.0.0", features = [
+  "add",
+  "mul"
+] }

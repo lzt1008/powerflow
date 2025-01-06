@@ -1,3 +1,4 @@
+import type { App } from 'vue'
 import messages from '@intlify/unplugin-vue-i18n/messages'
 import { MotionPlugin } from '@vueuse/motion'
 import { createPlugin as createTauriPiniaPlugin } from 'tauri-plugin-pinia'
@@ -10,13 +11,18 @@ const i18n = createI18n({
   messages,
 })
 
-export function setup(entry: Component) {
-  createApp(entry)
+export function setup(entry: Component, fn?: (app: App<Element>) => void) {
+  const app = createApp(entry)
     .use(MotionPlugin)
     .use(
       createPinia()
         .use(createTauriPiniaPlugin()),
     )
     .use(i18n)
-    .mount('#app')
+
+  if (fn) {
+    fn(app)
+  }
+
+  app.mount('#app')
 }

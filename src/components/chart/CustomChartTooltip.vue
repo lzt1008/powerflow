@@ -36,7 +36,9 @@ const formatter = new Intl.NumberFormat('en-US', {
           </span>
           <span class="text-xs text-muted-foreground">{{ item.name }}</span>
         </div>
-        <span class="text-xs font-semibold ml-4 font-mono">{{ typeof item.value === 'number' ? formatter.format(item.value) : item.value }}w</span>
+        <span class="text-xs font-semibold ml-4 font-mono">{{
+          typeof item.value === 'number' ? formatter.format(item.value) : item.value
+        }}{{ item.name.toLowerCase().includes('level') ? '%' : 'w' }}</span>
       </div>
     </CardContent>
   </Card>

@@ -27,7 +27,7 @@ export default defineConfig(async mode => ({
       ],
     }),
     autoImport({
-      imports: ['vue', 'pinia', '@vueuse/core'],
+      imports: ['vue', 'pinia', '@vueuse/core', 'vue-router'],
       dirsScanOptions: {
         types: true,
       },

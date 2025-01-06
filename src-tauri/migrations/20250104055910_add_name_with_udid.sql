@@ -1,0 +1,3 @@
+ALTER TABLE charging_histories ADD COLUMN name TEXT NOT NULL DEFAULT '';
+ALTER TABLE charging_histories ADD COLUMN udid TEXT NOT NULL DEFAULT '';
+ALTER TABLE charging_histories ADD COLUMN is_remote INTEGER NOT NULL DEFAULT 0;

@@ -1,21 +1,14 @@
 use std::time::Duration;
 
-use ratatui::widgets::SparklineBar;
-
 use super::{MergedPowerData, PowerStatistic, Resource};
-use crate::{
-    de::IORegistry,
-    ffi::smc::SMCPowerData,
-    util::{get_mac_name, skip_until},
-};
+use crate::{de::IORegistry, ffi::smc::SMCPowerData, util::get_mac_name};
 
 #[derive(Debug, Default)]
 pub struct LocalResource {
-    pub name: String,
     pub data: SMCPowerData,
     pub ioreg: IORegistry,
     pub efficiency_loss: f32,
-    pub last_update: u64,
+    pub last_update: i64,
     pub statistic: PowerStatistic,
 }
 
@@ -79,37 +72,7 @@ impl Resource for LocalResource {
         self.data.is_charging()
     }
 
-    fn max_battery_power(&self) -> f32 {
-        self.statistic.max_battery_power
-    }
-
-    fn max_input_power(&self) -> f32 {
-        self.statistic.max_input_power
-    }
-
-    fn max_system_power(&self) -> f32 {
-        self.statistic.max_system_power
-    }
-
-    fn battery_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.battery_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
-    fn input_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.input_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
-    fn system_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.system_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
-    fn is_realtime(&self) -> bool {
+    fn is_local(&self) -> bool {
         true
     }
 
@@ -123,5 +86,10 @@ impl Resource for LocalResource {
 
     fn smc(&self) -> Option<&SMCPowerData> {
         Some(&self.data)
+    }
+
+    fn last_update(&self) -> Duration {
+        // Duration::from_secs(self.ioreg.update_time)
+        todo!()
     }
 }

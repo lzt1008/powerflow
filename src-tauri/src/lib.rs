@@ -1,40 +1,35 @@
-use std::{
-    collections::{HashMap, HashSet},
-    process,
-    sync::Mutex,
-    time::Duration,
-};
+use std::collections::HashSet;
 
-use data::{start_device_sender, start_sender, PowerTickEvent, SenderMessage};
+use database::{setup_database, ChargingHistory};
+use device::{setup_device_listener, start_device_sender, DevicePowerTickEvent, DeviceState};
 use event::{
-    DeviceEvent, DevicePowerTickEvent, HidePopoverEvent, PowerUpdatedEvent, PreferenceEvent, Theme,
-    WindowLoadedEvent,
+    DeviceEvent, HidePopoverEvent, PowerUpdatedEvent, PreferenceEvent, Theme, WindowLoadedEvent,
 };
 use ext::WebviewWindowExt;
+use history::{setup_history_recorder, ChargingHistoryDetail, HistoryRecordedEvent};
+use local::{setup_sender_with_events, PowerTickEvent};
 use menu::setup_menu;
 use objc2_app_kit::{
     NSAppearance, NSAppearanceCustomization, NSAppearanceNameVibrantDark,
     NSAppearanceNameVibrantLight, NSWindow,
 };
-use scopefn::Run;
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use tauri::{
-    async_runtime,
-    menu::{MenuBuilder, MenuItemBuilder},
-    tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, State, Window, WindowEvent,
-};
-use tauri_plugin_positioner::{Position, WindowExt};
+use sqlx::{Pool, Sqlite};
+use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
 use tauri_specta::{collect_commands, collect_events, Event};
-use tokio::sync::mpsc;
-use tpower::ffi::{Action, InterfaceType};
-use util::set_window_controls_pos;
+use tpower::ffi::InterfaceType;
+use tray_icon::setup_tray_icon;
+use util::setup_traffic_light_positioner;
 
-pub mod data;
+mod database;
+pub mod device;
 mod event;
 mod ext;
+mod history;
+mod local;
 mod menu;
+mod tray_icon;
 mod util;
 
 #[tauri::command]
@@ -68,10 +63,10 @@ fn is_main_window_hidden(app: AppHandle) -> bool {
 #[specta::specta]
 fn get_device_name(
     id: String,
-    state: State<Mutex<AppState>>,
+    state: State<DeviceState>,
 ) -> Option<(String, HashSet<InterfaceType>)> {
-    let state = state.lock().unwrap();
-    let data = state.devices.get(&id);
+    let state = state.read().unwrap();
+    let data = state.get(&id);
     data.cloned()
 }
 
@@ -90,17 +85,35 @@ fn switch_theme(theme: Theme, app: AppHandle) {
         Theme::System => None,
     };
     app.webview_windows().values().for_each(|w| unsafe {
-        (w.ns_window().unwrap() as *mut NSWindow)
-            .as_ref()
-            .map(|w| w.setAppearance(apprence.as_deref()));
+        if let Some(w) = (w.ns_window().unwrap() as *mut NSWindow).as_ref() {
+            w.setAppearance(apprence.as_deref())
+        }
     });
 }
 
-pub struct AppState {
-    devices: HashMap<String, (String, HashSet<InterfaceType>)>,
+#[tauri::command]
+#[specta::specta]
+async fn get_detail_by_id(
+    id: i64,
+    db: State<'_, Pool<Sqlite>>,
+) -> Result<ChargingHistoryDetail, String> {
+    let bytes = database::get_detail_by_id(&db, id).await;
+    let detail = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+
+    Ok(detail)
 }
 
-pub async fn run() {
+#[tauri::command]
+#[specta::specta]
+async fn get_all_charging_history(
+    db: State<'_, Pool<Sqlite>>,
+) -> Result<Vec<ChargingHistory>, String> {
+    database::get_all_charging_history(&db)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+pub fn create_specta() -> tauri_specta::Builder {
     let builder = tauri_specta::Builder::<tauri::Wry>::new()
         .commands(collect_commands![
             open_app,
@@ -108,7 +121,9 @@ pub async fn run() {
             open_settings,
             get_device_name,
             get_mac_name,
-            switch_theme
+            switch_theme,
+            get_detail_by_id,
+            get_all_charging_history
         ])
         .events(collect_events![
             DeviceEvent,
@@ -117,7 +132,8 @@ pub async fn run() {
             PreferenceEvent,
             PowerUpdatedEvent,
             WindowLoadedEvent,
-            HidePopoverEvent
+            HidePopoverEvent,
+            HistoryRecordedEvent,
         ]);
 
     #[cfg(debug_assertions)]
@@ -130,52 +146,38 @@ pub async fn run() {
         )
         .expect("Failed to export typescript bindings");
 
-    let app_state = Mutex::new(AppState {
-        devices: HashMap::new(),
-    });
+    builder
+}
 
+pub fn run() {
+    let specta = create_specta();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_notification::init())
-        .plugin(tauri_plugin_log::Builder::new().build())
+        .plugin(
+            tauri_plugin_log::Builder::new()
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_pinia::init())
-        .invoke_handler(builder.invoke_handler())
-        .manage(app_state)
+        .invoke_handler(specta.invoke_handler())
+        .manage(DeviceState::default())
         .menu(setup_menu)
         .on_window_event(handle_window_event)
         .setup(move |app| {
-            builder.mount_events(app);
+            specta.mount_events(app);
 
-            let handle = app.app_handle().clone();
-
-            DeviceEvent::listen(app, move |event| {
-                let event = event.payload;
-                let app_state: State<Mutex<AppState>> = handle.state();
-
-                app_state
-                    .lock()
-                    .unwrap()
-                    .devices
-                    .entry(event.udid.clone())
-                    .or_insert_with(|| (event.name, HashSet::new()))
-                    .run(|e| match event.action {
-                        Action::Attached => {
-                            e.1.insert(event.interface);
-                        }
-                        Action::Detached => {
-                            e.1.remove(&event.interface);
-                        }
-                        _ => (),
-                    });
-            });
+            setup_database(app.handle().clone());
 
             setup_tray_icon(app)?;
             setup_sender_with_events(app);
             start_device_sender(app.app_handle().clone());
+            setup_device_listener(app.app_handle().clone());
+            setup_history_recorder(app.app_handle().clone());
 
-            set_window_controls_pos(app.main_window().unwrap().ns_window().unwrap(), 22., 24.);
+            setup_traffic_light_positioner(app.main_window().unwrap());
 
             Ok(())
         })
@@ -211,8 +213,8 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
                     .set_activation_policy(ActivationPolicy::Accessory)
                     .unwrap();
             }
-            WindowEvent::Resized(_) => {
-                // set_window_controls_pos(window.ns_window().unwrap(), 22., 24.);
+            WindowEvent::ThemeChanged(theme) => {
+                println!("Theme changed to: {}", theme);
             }
             _ => (),
         },
@@ -224,114 +226,4 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
         },
         _ => (),
     }
-}
-
-fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
-    let show = MenuItemBuilder::new("Show Window").build(app)?;
-    let quit = MenuItemBuilder::new("Quit").build(app)?;
-
-    let menu = MenuBuilder::new(app)
-        .item(&show)
-        .separator()
-        .item(&quit)
-        .build()
-        .unwrap();
-
-    let tray_icon = TrayIconBuilder::new()
-        .title("0 w")
-        .menu_on_left_click(false)
-        .menu(&menu)
-        .build(app)
-        .unwrap();
-
-    tray_icon.on_menu_event(move |tray_handle, event| match event.id() {
-        val if val == show.id() => {
-            let (window, _) = tray_handle
-                .app_handle()
-                .get_or_create_window("main")
-                .unwrap();
-
-            if !window.is_visible().unwrap() {
-                window.show().unwrap();
-                window.set_focus().unwrap();
-
-                tray_handle
-                    .app_handle()
-                    .set_activation_policy(ActivationPolicy::Regular)
-                    .unwrap();
-            }
-        }
-        val if val == quit.id() => {
-            tray_handle.app_handle().cleanup_before_exit();
-            process::exit(0);
-        }
-        _ => {}
-    });
-
-    tray_icon.on_tray_icon_event(move |tray_handle, event| {
-        tauri_plugin_positioner::on_tray_event(tray_handle.app_handle(), &event);
-        if let TrayIconEvent::Click {
-            button_state: MouseButtonState::Up,
-            ..
-        } = event
-        {
-            let (window, is_new) = tray_handle
-                .app_handle()
-                .get_or_create_window("popover")
-                .unwrap();
-
-            if window.is_visible().unwrap() && !is_new {
-                // let js side handle this, so we can have fade animation
-                HidePopoverEvent.emit(tray_handle.app_handle()).unwrap();
-            } else {
-                window.move_window(Position::TrayLeft).unwrap();
-                window.show().unwrap();
-                window.set_focus().unwrap();
-            }
-        }
-    });
-
-    PowerUpdatedEvent::listen(app.app_handle(), move |event| {
-        tray_icon.set_title(Some(event.payload.0)).unwrap();
-    });
-
-    Ok(())
-}
-
-fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
-    let app = app.app_handle();
-    let (sender_tx, rx) = mpsc::channel(10);
-    start_sender(app, rx);
-
-    // send an immediate update when the main window is loaded
-    let tx = sender_tx.clone();
-    WindowLoadedEvent::listen(app, move |_| {
-        let tx = tx.clone();
-        async_runtime::spawn(async move {
-            tx.send(SenderMessage::ImmediateSend).await.unwrap();
-        });
-    });
-
-    let tx = sender_tx.clone();
-    PreferenceEvent::listen(app, move |event| {
-        if let Some(msg) = match event.payload {
-            PreferenceEvent::UpdateInterval(interval) => Some(SenderMessage::ChangeInterval(
-                Duration::from_millis(interval.into()),
-            )),
-            PreferenceEvent::StatusBarItem(item) => Some(SenderMessage::ChangeStatusBarItem(item)),
-            PreferenceEvent::StatusBarShowCharging(show) => {
-                Some(SenderMessage::StatusBarShowCharging(show))
-            }
-            PreferenceEvent::Language(_) => {
-                // No need to send, perform some menu refreshing
-                None
-            }
-            _ => None,
-        } {
-            let tx = tx.clone();
-            async_runtime::spawn(async move {
-                tx.send(msg).await.unwrap();
-            });
-        }
-    });
 }

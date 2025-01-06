@@ -22,6 +22,22 @@ async getMacName() : Promise<string | null> {
 },
 async switchTheme(theme: Theme) : Promise<void> {
     await TAURI_INVOKE("switch_theme", { theme });
+},
+async getDetailById(id: number) : Promise<Result<ChargingHistoryDetail, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_detail_by_id", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAllChargingHistory() : Promise<Result<ChargingHistory[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_charging_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -32,6 +48,7 @@ export const events = __makeEvents__<{
 deviceEvent: DeviceEvent,
 devicePowerTickEvent: DevicePowerTickEvent,
 hidePopoverEvent: HidePopoverEvent,
+historyRecordedEvent: HistoryRecordedEvent,
 powerTickEvent: PowerTickEvent,
 powerUpdatedEvent: PowerUpdatedEvent,
 preferenceEvent: PreferenceEvent,
@@ -40,6 +57,7 @@ windowLoadedEvent: WindowLoadedEvent
 deviceEvent: "device-event",
 devicePowerTickEvent: "device-power-tick-event",
 hidePopoverEvent: "hide-popover-event",
+historyRecordedEvent: "history-recorded-event",
 powerTickEvent: "power-tick-event",
 powerUpdatedEvent: "power-updated-event",
 preferenceEvent: "preference-event",
@@ -74,11 +92,33 @@ export type Action =
  */
 "NotificationStopped" | "Paired"
 export type AdapterDetails = { adapterVoltage: number | null; isWireless: boolean | null; watts: number | null; name: string | null; current: number | null; description: string | null }
+export type ChargingHistory = { id: number; fromLevel: number; endLevel: number; chargingTime: number; timestamp: number; name: string; udid: string; isRemote: number }
+export type ChargingHistoryDetail = { avg: NormalizedData; peak: NormalizedData; curve: NormalizedResource[]; raw: string[] }
 export type DeviceEvent = { udid: string; name: string; interface: InterfaceType; action: Action }
 export type DevicePowerTickEvent = { udid: string; io: IORegistry }
+export type Duration = { secs: number; nanos: number }
 export type HidePopoverEvent = null
+export type HistoryRecordedEvent = null
 export type IORegistry = { adapterDetails: AdapterDetails; powerTelemetryData: PowerTelemetryData | null; absoluteCapacity: number; amperage: number; voltage: number; appleRawBatteryVoltage: number | null; appleRawCurrentCapacity: number; appleRawMaxCapacity: number; currentCapacity: number; cycleCount: number; designCapacity: number; fullyCharged: boolean; instantAmperage: number; isCharging: boolean; maxCapacity: number; temperature: number; timeRemaining: number; updateTime: number }
 export type InterfaceType = "Unknown" | "USB" | "WiFi"
+export type NormalizedData = { systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
+/**
+ * Nan if not available
+ */
+brightnessPower: number; 
+/**
+ * Nan if not available
+ */
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number }
+export type NormalizedResource = ({ systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
+/**
+ * Nan if not available
+ */
+brightnessPower: number; 
+/**
+ * Nan if not available
+ */
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number }
 export type PowerTelemetryData = { adapterEfficiencyLoss: number; batteryPower: number; systemCurrentIn: number; systemEnergyConsumed: number; systemLoad: number; systemPowerIn: number; systemVoltageIn: number }
 export type PowerTickEvent = { io: IORegistry; smc: SMCPowerData }
 export type PowerUpdatedEvent = string

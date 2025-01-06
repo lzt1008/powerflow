@@ -7,7 +7,7 @@ export const localeMap = {
   'zh-CN': zhCN,
 }
 
-export const shortDistanceLocale: Locale = {
+export const shortestDistanceLocale: Locale = {
   ...enUS,
   formatDistance: (token, count, options) => {
     const shortUnits: Record<FormatDistanceToken, string> = {
@@ -32,10 +32,35 @@ export const shortDistanceLocale: Locale = {
   },
 }
 
+export const shortEnDistanceLocale: Locale = {
+  ...enUS,
+  formatDistance: (token, count, options) => {
+    const shortUnits: Record<FormatDistanceToken, string> = {
+      lessThanXSeconds: `less than${count}s`,
+      lessThanXMinutes: `less than ${count}m`,
+      halfAMinute: 'half a min',
+      aboutXHours: `~${count}hour`,
+      aboutXMonths: `~${count}mon`,
+      aboutXYears: `~${count}year`,
+      aboutXWeeks: `~${count}w`,
+      almostXYears: `~${count}y`,
+      xWeeks: `${count}week`,
+      xSeconds: `${count}sec`,
+      xMinutes: `${count}mins`,
+      xHours: `${count}hours`,
+      xDays: `${count}days`,
+      xMonths: `${count}mon`,
+      xYears: `${count}years`,
+      overXYears: `>${count}years`,
+    }
+    return `${shortUnits[token]} ${options?.addSuffix ? 'ago' : ''}`
+  },
+}
+
 export function formatUpdateTime(date: ArgumentsType<typeof formatDistanceToNow>[0]) {
   return formatDistanceToNow(date, {
     addSuffix: true,
     includeSeconds: true,
-    locale: shortDistanceLocale,
+    locale: shortestDistanceLocale,
   })
 }

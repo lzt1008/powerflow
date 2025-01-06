@@ -89,7 +89,8 @@ with_repr! {
         pub max_capacity: i32,
         pub temperature: i32,
         pub time_remaining: i32,
-        pub update_time: u64,
+        // TODO: check
+        pub update_time: i64,
     }
 }
 
@@ -97,5 +98,11 @@ impl Deref for IORegistry {
     type Target = Option<PowerTelemetryData>;
     fn deref(&self) -> &Self::Target {
         &self.power_telemetry_data
+    }
+}
+
+impl IORegistry {
+    pub fn ptd(&self) -> Option<&PowerTelemetryData> {
+        self.power_telemetry_data.as_ref()
     }
 }

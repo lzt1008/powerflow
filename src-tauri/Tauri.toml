@@ -33,6 +33,7 @@ transparent = true
 skipTaskbar = true
 focus = false
 
+
 [[app.windows]]
 label = "settings"
 url = "settings.html"

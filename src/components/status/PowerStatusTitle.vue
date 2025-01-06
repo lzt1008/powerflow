@@ -5,7 +5,7 @@ import { ArrowUpDown } from 'lucide-vue-next'
 const power = usePower()
 const rawData = usePowerRaw()
 
-const showRemainDuration = ref(false)
+const showRemainDuration = ref(true)
 const buttonText = computed(() => {
   if (showRemainDuration.value) {
     const minutes = power.value.timeRemaining

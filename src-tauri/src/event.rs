@@ -1,13 +1,10 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use tauri_specta::Event;
-use tpower::{
-    de::IORegistry,
-    ffi::{Action, InterfaceType},
-};
+use tpower::ffi::{Action, InterfaceType};
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "camelCase")]
 pub enum Theme {
     Light,
     Dark,
@@ -15,7 +12,7 @@ pub enum Theme {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Type)]
-#[serde(rename_all = "kebab-case")]
+#[serde(rename_all = "camelCase")]
 pub enum StatusBarItem {
     System,
     Screen,
@@ -31,13 +28,6 @@ pub enum PreferenceEvent {
     Language(String),
     StatusBarItem(StatusBarItem),
     StatusBarShowCharging(bool),
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct DevicePowerTickEvent {
-    pub udid: String,
-    pub io: IORegistry,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]

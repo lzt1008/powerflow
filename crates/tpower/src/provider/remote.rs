@@ -1,10 +1,6 @@
-use std::{
-    mem,
-    time::{Duration, SystemTime},
-};
+use std::{mem, time::Duration};
 
 use core_foundation::{base::TCFType, dictionary::CFDictionary};
-use ratatui::widgets::SparklineBar;
 use thiserror::Error;
 
 use super::{MergedPowerData, PowerStatistic, Resource};
@@ -13,14 +9,14 @@ use crate::{
     de::{repr, IORegistry},
     ffi::{smc::SMCPowerData, wrapper::ServiceConnection},
     provider::PowerDataFrom,
-    util::{dict_into, skip_until, DictParseError},
+    util::{dict_into, DictParseError},
 };
 
 #[derive(Debug, Default)]
 pub struct RemoteResource {
     pub name: String,
     pub data: IORegistry,
-    pub last_update: u64,
+    pub last_update: i64,
     pub statistic: PowerStatistic,
 }
 
@@ -83,45 +79,16 @@ impl Resource for RemoteResource {
         Duration::from_secs(self.data.time_remaining as u64 * 60)
     }
 
-    fn max_battery_power(&self) -> f32 {
-        self.statistic.max_battery_power
-    }
-
-    fn max_input_power(&self) -> f32 {
-        self.statistic.max_input_power
-    }
-
-    fn max_system_power(&self) -> f32 {
-        self.statistic.max_system_power
-    }
-
-    fn battery_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.battery_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
-    fn input_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.input_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
-    fn system_history(&self, width: usize) -> Vec<SparklineBar> {
-        skip_until(self.statistic.system_history.iter(), width)
-            .map(|v| SparklineBar::from(*v))
-            .collect()
-    }
-
     fn last_update(&self) -> Duration {
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap_or_default()
-            .checked_sub(Duration::from_secs(self.last_update))
-            .unwrap_or_default()
+        todo!()
+        // SystemTime::now()
+        //     .duration_since(SystemTime::UNIX_EPOCH)
+        //     .unwrap_or_default()
+        //     .checked_sub(Duration::from_secs(self.last_update))
+        //     .unwrap_or_default()
     }
 
-    fn is_realtime(&self) -> bool {
+    fn is_local(&self) -> bool {
         false
     }
 

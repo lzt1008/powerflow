@@ -188,7 +188,7 @@ interface PowerReturnBase {
   fullyCharged: boolean
 }
 
-interface LocalPowerReturn extends PowerReturnBase {
+export interface LocalPowerReturn extends PowerReturnBase {
   isRemote: false
   smc: SMCPowerData
   heatpipePower: number
@@ -199,7 +199,7 @@ interface RemotePowerReturn extends PowerReturnBase {
   isRemote: true
 }
 
-function createPowerData(
+export function createPowerData(
   { smc, io, statistics }: RawPowerData,
   isLocal: boolean,
 ): LocalPowerReturn | RemotePowerReturn {
