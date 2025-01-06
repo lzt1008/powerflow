@@ -71,22 +71,24 @@ pub async fn save_charging_history(
 }
 
 pub fn setup_database(app: AppHandle) {
-    async_runtime::spawn(async move {
-        let db_path = app
-            .path()
-            .app_data_dir()
-            .expect("Failed to get app data directory")
-            .join(DEFAULT_DATABASE_NAME);
-        let db = SqlitePool::connect_with(
-            SqliteConnectOptions::new()
-                .filename(db_path)
-                .create_if_missing(true),
-        )
-        .await
-        .unwrap();
+    block_in_place(|| {
+        async_runtime::block_on(async move {
+            let db_path = app
+                .path()
+                .app_data_dir()
+                .expect("Failed to get app data directory")
+                .join(DEFAULT_DATABASE_NAME);
+            let db = SqlitePool::connect_with(
+                SqliteConnectOptions::new()
+                    .filename(db_path)
+                    .create_if_missing(true),
+            )
+            .await
+            .unwrap();
 
-        migrate!().run(&db).await.unwrap();
+            migrate!().run(&db).await.unwrap();
 
-        app.manage(db);
+            app.manage(db);
+        });
     });
 }
