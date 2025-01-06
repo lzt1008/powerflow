@@ -16,17 +16,16 @@ defineProps<ChargingHistory>()
         <LaptopIcon v-else class="size-5" />
       </div>
       <div class="flex flex-col ml-4">
-        <span class="flex items-baseline gap-2 text-lg font-bold relative">
-          <span class="flex items-center gap-1">{{ fromLevel }}% <ChevronRight class="size-4" /> {{ endLevel }}%</span>
-          <div class="text-muted-foreground font-mono text-sm">
+        <span class="flex items-baseline gap-2 relative">
+          <span class="flex items-center gap-1 font-medium">{{ fromLevel }}% <ChevronRight class="size-4" /> {{ endLevel }}%</span>
+          <div class="text-muted-foreground font-mono text-xs">
             {{ formatDuration(
               intervalToDuration({
                 start: timestamp * 1000,
                 end: timestamp * 1000 + chargingTime * 1000,
-              })
-              , {
+              }), {
                 locale: shortEnDistanceLocale,
-                format: ['hours', 'minutes'],
+                format: ['hours', 'minutes'] 
               }) }}
           </div>
         </span>

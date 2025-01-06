@@ -92,7 +92,7 @@ export type Action =
  */
 "NotificationStopped" | "Paired"
 export type AdapterDetails = { adapterVoltage: number | null; isWireless: boolean | null; watts: number | null; name: string | null; current: number | null; description: string | null }
-export type ChargingHistory = { id: number; fromLevel: number; endLevel: number; chargingTime: number; timestamp: number; name: string; udid: string; isRemote: number }
+export type ChargingHistory = { id: number; fromLevel: number; endLevel: number; chargingTime: number; timestamp: number; name: string; udid: string; isRemote: number; adapterName: string }
 export type ChargingHistoryDetail = { avg: NormalizedData; peak: NormalizedData; curve: NormalizedResource[]; raw: string[] }
 export type DeviceEvent = { udid: string; name: string; interface: InterfaceType; action: Action }
 export type DevicePowerTickEvent = { udid: string; io: IORegistry }
@@ -103,22 +103,22 @@ export type IORegistry = { adapterDetails: AdapterDetails; powerTelemetryData: P
 export type InterfaceType = "Unknown" | "USB" | "WiFi"
 export type NormalizedData = { systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
 /**
- * Nan if not available
+ * 0 if not available
  */
 brightnessPower: number; 
 /**
- * Nan if not available
+ * 0 if not available
  */
-heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number }
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }
 export type NormalizedResource = ({ systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
 /**
- * Nan if not available
+ * 0 if not available
  */
 brightnessPower: number; 
 /**
- * Nan if not available
+ * 0 if not available
  */
-heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number }
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null }
 export type PowerTelemetryData = { adapterEfficiencyLoss: number; batteryPower: number; systemCurrentIn: number; systemEnergyConsumed: number; systemLoad: number; systemPowerIn: number; systemVoltageIn: number }
 export type PowerTickEvent = { io: IORegistry; smc: SMCPowerData }
 export type PowerUpdatedEvent = string

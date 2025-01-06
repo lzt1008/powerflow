@@ -31,6 +31,7 @@ pub struct ChargingHistory {
     pub end_level: i32,
     pub duration: i64,
     pub timestamp: i64,
+    pub adapter_name: String,
     pub detail: ChargingHistoryDetail,
 }
 
@@ -72,17 +73,16 @@ fn summrize_history(
     let timestamp = staged.first().unwrap().data.last_update;
     let duration = staged.last().unwrap().data.last_update - timestamp;
 
-    let detail = ChargingHistoryDetail {
-        avg: staged
-            .iter()
-            .fold(NormalizedData::default(), |acc, cur| acc + *cur.data)
-            .div(staged.len() as f32),
-        peak: staged.iter().fold(NormalizedData::default(), |acc, cur| {
-            acc.max_with(&cur.data)
-        }),
-        curve: staged.iter().map(|item| item.data).collect(),
-        raw: staged.into_iter().map(|item| item.raw).collect(),
-    };
+    let adapter_name = staged.last().unwrap().data.adapter_name.clone().unwrap_or("Unknown".to_string());
+
+    let avg = staged
+        .iter()
+        .fold(NormalizedData::default(), |acc, cur| acc + *cur.data)
+        .div(staged.len() as f32);
+    let peak = staged.iter().fold(NormalizedData::default(), |acc, cur| {
+        acc.max_with(&cur.data)
+    });
+    let (curve, raw) = staged.into_iter().map(|s| (s.data, s.raw)).unzip();
 
     ChargingHistory {
         is_remote: matches!(typ, DeviceType::Remote(_)),
@@ -95,7 +95,13 @@ fn summrize_history(
         end_level,
         duration,
         timestamp,
-        detail,
+        adapter_name,
+        detail: ChargingHistoryDetail {
+            avg,
+            peak,
+            curve,
+            raw,
+        },
     }
 }
 
@@ -136,8 +142,8 @@ fn spawn_history_recorder(
             {
                 log::info!("staged: {:#?}", staged.len());
                 staged.push(ChargingHistoryStage {
-                    data,
                     raw: serde_json::to_string(&data).unwrap(),
+                    data,
                 });
             }
         }

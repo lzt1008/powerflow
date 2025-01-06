@@ -77,7 +77,7 @@ pub enum PowerResource {
     Remote(RemoteResource),
 }
 
-#[derive(Debug, Clone, Copy, Default, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct NormalizedResource {
@@ -85,6 +85,7 @@ pub struct NormalizedResource {
     pub is_charging: bool,
     pub time_remain: Duration,
     pub last_update: i64,
+    pub adapter_name: Option<String>,
     #[serde(flatten)]
     pub data: NormalizedData,
 }
@@ -97,13 +98,17 @@ pub struct NormalizedData {
     pub system_load: f32,
     pub battery_power: f32,
     pub adapter_power: f32,
-    /// Nan if not available
+    /// 0 if not available
     pub brightness_power: f32,
-    /// Nan if not available
+    /// 0 if not available
     pub heatpipe_power: f32,
     pub battery_level: i32,
     pub absolute_battery_level: f32,
     pub temperature: f32,
+
+    pub adapter_watts: f32,
+    pub adapter_voltage: f32,
+    pub adapter_amperage: f32,
 }
 
 impl NormalizedData {
@@ -120,6 +125,9 @@ impl NormalizedData {
             temperature: self.temperature.max(other.temperature),
             brightness_power: self.brightness_power.max(other.brightness_power),
             heatpipe_power: self.heatpipe_power.max(other.heatpipe_power),
+            adapter_watts: self.adapter_watts.max(other.adapter_watts),
+            adapter_voltage: self.adapter_voltage.max(other.adapter_voltage),
+            adapter_amperage: self.adapter_amperage.max(other.adapter_amperage),
         }
     }
 }
@@ -138,6 +146,9 @@ impl Div<f32> for NormalizedData {
             battery_level: self.battery_level / rhs as i32,
             absolute_battery_level: self.absolute_battery_level / rhs,
             temperature: self.temperature / rhs,
+            adapter_watts: self.adapter_watts / rhs,
+            adapter_voltage: self.adapter_voltage / rhs,
+            adapter_amperage: self.adapter_amperage / rhs,
         }
     }
 }
@@ -168,6 +179,11 @@ impl From<&IORegistry> for NormalizedResource {
             is_charging: io.is_charging,
             time_remain: Duration::from_secs(io.time_remaining as u64 * 60),
             last_update: io.update_time,
+            adapter_name: io
+                .adapter_details
+                .name
+                .clone()
+                .or_else(|| io.adapter_details.description.clone()),
             data: NormalizedData {
                 system_in,
                 system_load,
@@ -178,6 +194,11 @@ impl From<&IORegistry> for NormalizedResource {
                 battery_level: io.current_capacity,
                 absolute_battery_level: io.current_capacity as f32 / io.max_capacity as f32 * 100.,
                 temperature: io.temperature as f32 / 100.,
+
+                adapter_watts: io.adapter_details.watts.unwrap_or_default() as f32,
+                adapter_voltage: io.adapter_details.adapter_voltage.unwrap_or_default() as f32
+                    / 1000.,
+                adapter_amperage: io.adapter_details.current.unwrap_or_default() as f32 / 1000.,
             },
         }
     }
@@ -196,6 +217,11 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                     smc.time_to_empty
                 },
             ),
+            adapter_name: io
+                .adapter_details
+                .name
+                .clone()
+                .or_else(|| io.adapter_details.description.clone()),
             data: NormalizedData {
                 system_in: smc.delivery_rate,
                 system_load: smc.system_total,
@@ -208,6 +234,11 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                 adapter_power: smc.delivery_rate
                     + io.ptd()
                         .map_or(0.0, |d| d.adapter_efficiency_loss as f32 / 1000.),
+
+                adapter_watts: io.adapter_details.watts.unwrap_or_default() as f32,
+                adapter_voltage: io.adapter_details.adapter_voltage.unwrap_or_default() as f32
+                    / 1000.,
+                adapter_amperage: io.adapter_details.current.unwrap_or_default() as f32 / 1000.,
             },
         }
     }

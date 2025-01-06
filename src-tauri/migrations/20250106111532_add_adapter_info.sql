@@ -1,0 +1,1 @@
+ALTER TABLE charging_histories ADD COLUMN adapter_name TEXT NOT NULL DEFAULT 'Unknown';

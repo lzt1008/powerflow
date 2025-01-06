@@ -16,7 +16,9 @@ use objc2_app_kit::{
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use sqlx::{Pool, Sqlite};
-use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
+use tauri::{
+    async_runtime, ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent,
+};
 use tauri_specta::{collect_commands, collect_events, Event};
 use tpower::ffi::InterfaceType;
 use tray_icon::setup_tray_icon;

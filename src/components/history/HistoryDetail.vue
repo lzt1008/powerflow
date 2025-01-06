@@ -38,7 +38,7 @@ const data = computed(() => {
         {{ name || 'Unknown' }}
       </h1>
       <h2 class="text-sm font-bold mt-1 text-muted-foreground">
-        {{ udid || 'Unknown' }}
+        {{ adapterName }}
       </h2>
       <div class="mt-4 grid gap-4 grid-cols-3">
         <div class="space-y-2">
@@ -111,6 +111,12 @@ const data = computed(() => {
               Adapter Power Peak
             </div>
             <div>{{ data.peak.adapterPower.toFixed(1) }}W</div>
+          </div>
+          <div>
+            <div class="text-muted-foreground">
+              Adapter Watts
+            </div>
+            <div>{{ data.peak.adapterWatts }}W({{ data.peak.adapterVoltage }}V, {{ data.peak.adapterAmperage }}A)</div>
           </div>
         </div>
       </div>

@@ -5,7 +5,11 @@ use sqlx::{
     sqlite::{SqliteConnectOptions, SqliteQueryResult},
     SqlitePool,
 };
-use tauri::{async_runtime, AppHandle, Manager};
+use tauri::{
+    async_runtime::{self, block_on},
+    AppHandle, Manager,
+};
+use tokio::{sync::oneshot, task::block_in_place};
 
 use crate::history;
 
@@ -22,6 +26,7 @@ pub struct ChargingHistory {
     name: String,
     udid: String,
     is_remote: i64,
+    adapter_name: String,
 }
 
 pub async fn get_all_charging_history(
@@ -29,7 +34,7 @@ pub async fn get_all_charging_history(
 ) -> Result<Vec<ChargingHistory>, sqlx::Error> {
     query_as!(
         ChargingHistory,
-        "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote FROM charging_histories"
+        "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote, adapter_name FROM charging_histories"
     )
     .fetch_all(conn)
     .await
@@ -50,7 +55,7 @@ pub async fn save_charging_history(
     let detail = serde_json::to_vec(&history.detail).unwrap();
     let duration = history.duration;
     query!(
-        "INSERT INTO charging_histories (from_level, end_level, charging_time, timestamp, detail, name, udid, is_remote) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO charging_histories (from_level, end_level, charging_time, timestamp, detail, name, udid, is_remote, adapter_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         history.from_level,
         history.end_level,
         duration,
@@ -58,7 +63,8 @@ pub async fn save_charging_history(
         detail,
         history.name,
         history.udid,
-        history.is_remote
+        history.is_remote,
+        history.adapter_name
     )
     .execute(conn)
     .await
