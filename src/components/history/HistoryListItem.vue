@@ -3,7 +3,7 @@ import type { ChargingHistory } from '@/bindings'
 import { shortEnDistanceLocale } from '@/lib/format'
 import { MobileIcon } from '@radix-icons/vue'
 import { formatDistanceToNow, formatDuration, intervalToDuration } from 'date-fns'
-import { ChevronRight } from 'lucide-vue-next'
+import { ChevronRight, LaptopIcon } from 'lucide-vue-next'
 
 defineProps<ChargingHistory>()
 </script>
@@ -11,8 +11,9 @@ defineProps<ChargingHistory>()
 <template>
   <div class="flex items-center justify-between rounded-xl border px-4 py-2">
     <div class="flex items-center">
-      <div class="rounded-full bg-muted p-2 h-min">
-        <MobileIcon class="size-5" />
+      <div class="py-2 h-min">
+        <MobileIcon v-if="isRemote" class="size-5" />
+        <LaptopIcon v-else class="size-5" />
       </div>
       <div class="flex flex-col ml-4">
         <span class="flex items-baseline gap-2 text-lg font-bold relative">
