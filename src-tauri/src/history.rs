@@ -73,7 +73,13 @@ fn summrize_history(
     let timestamp = staged.first().unwrap().data.last_update;
     let duration = staged.last().unwrap().data.last_update - timestamp;
 
-    let adapter_name = staged.last().unwrap().data.adapter_name.clone().unwrap_or("Unknown".to_string());
+    let adapter_name = staged
+        .last()
+        .unwrap()
+        .data
+        .adapter_name
+        .clone()
+        .unwrap_or("Unknown".to_string());
 
     let avg = staged
         .iter()

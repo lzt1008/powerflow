@@ -6,10 +6,10 @@ use sqlx::{
     SqlitePool,
 };
 use tauri::{
-    async_runtime::{self, block_on},
+    async_runtime::{self},
     AppHandle, Manager,
 };
-use tokio::{sync::oneshot, task::block_in_place};
+use tokio::task::block_in_place;
 
 use crate::history;
 

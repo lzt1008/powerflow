@@ -303,7 +303,7 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
                 let _: () = msg_send![super_del, effectiveAppearanceDidChange: notification];
             }
         }
-        extern "C" fn on_effective_appearance_did_changed_on_main_thread<R: Runtime>(
+        extern "C" fn on_effective_appearance_did_changed_on_main_thread(
             this: &Object,
             _cmd: Sel,
             notification: id,
@@ -356,7 +356,7 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             (windowWillExitFullScreen:) => on_window_will_exit_full_screen::<R> as extern fn(&Object, Sel, id),
             (windowDidFailToEnterFullScreen:) => on_window_did_fail_to_enter_full_screen as extern fn(&Object, Sel, id),
             (effectiveAppearanceDidChange:) => on_effective_appearance_did_change::<R> as extern fn(&Object, Sel, id),
-            (effectiveAppearanceDidChangedOnMainThread:) => on_effective_appearance_did_changed_on_main_thread::<R> as extern fn(&Object, Sel, id)
+            (effectiveAppearanceDidChangedOnMainThread:) => on_effective_appearance_did_changed_on_main_thread as extern fn(&Object, Sel, id)
         });
 
         init_listener(delegate);
