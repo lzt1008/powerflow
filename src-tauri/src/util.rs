@@ -103,7 +103,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             }
         }
         extern "C" fn on_window_did_resize<R: Runtime>(this: &Object, _cmd: Sel, notification: id) {
-            println!("Window did resize");
             unsafe {
                 with_window_state(this, |state: &mut WindowState<R>| {
                     let id = state
@@ -286,7 +285,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             _cmd: Sel,
             notification: id,
         ) {
-            println!("Effective appearance did change");
             unsafe {
                 with_window_state(this, |state: &mut WindowState<R>| {
                     let id = state
@@ -310,7 +308,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             _cmd: Sel,
             notification: id,
         ) {
-            println!("Effective appearance did change on main thread");
             unsafe {
                 let super_del: id = *this.get_ivar("super_delegate");
                 let _: () = msg_send![
@@ -319,10 +316,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
                 ];
             }
         }
-
-        // extern "C" fn init_listener(this: &Object, _cmd: Sel, _: id) {
-
-        // }
 
         // Are we deallocing this properly ? (I miss safe Rust :(  )
         let window_label = window.label().to_string();
@@ -344,7 +337,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             app_box: *mut c_void = app_box,
             toolbar: id = cocoa::base::nil,
             super_delegate: id = current_delegate,
-            // (initListener:) => init_listener as extern fn(&Object, Sel, id),
             (windowShouldClose:) => on_window_should_close as extern fn(&Object, Sel, id) -> BOOL,
             (windowWillClose:) => on_window_will_close as extern fn(&Object, Sel, id),
             (windowDidResize:) => on_window_did_resize::<R> as extern fn(&Object, Sel, id),
@@ -367,7 +359,6 @@ pub fn setup_traffic_light_positioner<R: Runtime>(window: WebviewWindow<R>) {
             (effectiveAppearanceDidChangedOnMainThread:) => on_effective_appearance_did_changed_on_main_thread::<R> as extern fn(&Object, Sel, id)
         });
 
-        // let _: () = msg_send![delegate, initListener];
         init_listener(delegate);
         ns_win.setDelegate_(delegate);
     }
