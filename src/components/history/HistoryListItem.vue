@@ -40,7 +40,7 @@ defineProps<ChargingHistory>()
     <div class="w-24" />
 
     <div class="flex items-center gap-4">
-      <div class="hover:bg-muted transition-colors rounded-full p-2">
+      <div class="p-2">
         <ChevronRight class="size-4" />
       </div>
     </div>

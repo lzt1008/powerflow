@@ -27,7 +27,7 @@ watchEffect(() => {
         v-for="udid in ['local', ...Object.keys(data.remote)]"
         :key="udid"
         :value="udid"
-        class="overflow-hidden h-full"
+        class="overflow-y-auto h-full"
       >
         <RouterView v-slot="{ Component }">
           <Transition
