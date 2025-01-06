@@ -236,7 +236,7 @@ export function createPowerData(
       screenPower: smc.brightness || 0,
       heatpipePower: smc.heatpipe || 0,
       systemIn: smc.deliveryRate || 0,
-      batteryPower: smc.batteryRate || 0,
+      batteryPower: smc.chargingStatus === 1 ? Math.max(smc.batteryRate, smc.deliveryRate - smc.systemTotal) : (smc.batteryRate || 0),
     }
     return localData
   }
