@@ -31,7 +31,7 @@ defineProps<ChargingHistory>()
         </span>
 
         <span class="text-muted-foreground font-mono text-xs">{{
-          formatDistanceToNow(new Date(timestamp * 1000), { addSuffix: true })
+          formatDistanceToNow(new Date(timestamp * 1000 + chargingTime * 1000), { addSuffix: true })
         }}</span>
       </div>
     </div>
