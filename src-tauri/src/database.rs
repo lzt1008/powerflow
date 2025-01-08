@@ -40,12 +40,21 @@ pub async fn get_all_charging_history(
     .await
 }
 
-pub async fn get_detail_by_id(conn: &SqlitePool, id: i64) -> Vec<u8> {
+pub async fn get_detail_by_id(conn: &SqlitePool, id: i64) -> Result<Vec<u8>, String> {
     query!("SELECT detail FROM charging_histories WHERE id = ?", id)
         .fetch_one(conn)
         .await
-        .unwrap()
-        .detail
+        .map(|v| v.detail)
+        .map_err(|e| e.to_string())
+}
+
+pub async fn delete_history_by_id(
+    conn: &SqlitePool,
+    id: i64,
+) -> Result<SqliteQueryResult, sqlx::Error> {
+    query!("DELETE FROM charging_histories WHERE id = ?", id)
+        .execute(conn)
+        .await
 }
 
 pub async fn save_charging_history(

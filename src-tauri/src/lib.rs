@@ -97,10 +97,19 @@ async fn get_detail_by_id(
     id: i64,
     db: State<'_, Pool<Sqlite>>,
 ) -> Result<ChargingHistoryDetail, String> {
-    let bytes = database::get_detail_by_id(&db, id).await;
+    let bytes = database::get_detail_by_id(&db, id).await?;
     let detail = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
 
     Ok(detail)
+}
+
+#[tauri::command]
+#[specta::specta]
+async fn delete_history_by_id(id: i64, db: State<'_, Pool<Sqlite>>) -> Result<u64, String> {
+    database::delete_history_by_id(&db, id)
+        .await
+        .map(|v| v.rows_affected())
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -123,7 +132,8 @@ pub fn create_specta() -> tauri_specta::Builder {
             get_mac_name,
             switch_theme,
             get_detail_by_id,
-            get_all_charging_history
+            get_all_charging_history,
+            delete_history_by_id
         ])
         .events(collect_events![
             DeviceEvent,

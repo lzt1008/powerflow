@@ -124,7 +124,7 @@ pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
                             devices.insert(device, conn);
                         },
                         Action::Detached => {
-                            log::info!("Device detached: {}", device.udid);
+                            log::debug!("Device detached: {}", device.udid);
                             DeviceEvent {
                                 udid: device.udid.clone(),
                                 name: String::new(),

@@ -2,12 +2,14 @@
 import type { ChargingHistory, ChargingHistoryDetail } from '@/bindings'
 import { commands } from '@/bindings'
 import CustomChartTooltip from '@/components/chart/CustomChartTooltip.vue'
+import { useHistory } from '@/composables/useHistory'
 import { shortEnDistanceLocale } from '@/lib/format'
 import { error as logerror } from '@tauri-apps/plugin-log'
 import { format, formatDuration, intervalToDuration } from 'date-fns'
 import { Download, EllipsisVertical, Loader2, Trash2 } from 'lucide-vue-next'
 
 const props = defineProps<ChargingHistory>()
+const { selectedItem, history } = useHistory()
 
 const isLoading = ref(true)
 const error = ref()
@@ -58,7 +60,14 @@ const data = asyncComputed(
                 Export Data
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem class="text-red-500 focus:text-red-500 focus:bg-red-500/10">
+              <DropdownMenuItem
+                class="text-red-500 focus:text-red-500 focus:bg-red-500/10"
+                @click="() => {
+                  commands.deleteHistoryById(id)
+                  selectedItem = null
+                  history.update()
+                }"
+              >
                 <Trash2 />
                 Delete
               </DropdownMenuItem>

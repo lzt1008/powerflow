@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import { type ChargingHistory, events } from '@/bindings'
+import type { ChargingHistory } from '@/bindings'
+import { events } from '@/bindings'
+import { useHistory } from '@/composables/useHistory'
 import { Info } from 'lucide-vue-next'
 
-const { isLoading, state, execute } = usePowerHistory()
-const selectedItem = ref({} as ChargingHistory)
+const { selectedItem, history } = useHistory()
 
 onMounted(() => {
-  const unlisten = events.historyRecordedEvent.listen(() => execute())
+  const unlisten = events.historyRecordedEvent.listen(() => {
+    history.update()
+  })
 
   onScopeDispose(() => unlisten.then(f => f()))
 })
@@ -14,7 +17,7 @@ onMounted(() => {
 
 <template>
   <div
-    v-if="!isLoading && state.status === 'ok' && state.data.length === 0"
+    v-if="!history.isLoading && !history.data"
     class="w-full h-full flex flex-col gap-2 items-center justify-center text-muted-foreground"
   >
     <Info class="w-6 h-6" />
@@ -25,14 +28,14 @@ onMounted(() => {
       <h2 class="font-bold text-lg">
         History
       </h2>
-      <div v-if="!isLoading && state.status === 'ok'" class="flex flex-col gap-4 h-full overflow-y-auto pr-4">
+      <div v-if="!history.isLoading.value && history.data.value" class="flex flex-col gap-4 h-full overflow-y-auto pr-4">
         <HistoryListItem
-          v-for="item in state.data"
+          v-for="item in history.data.value as ChargingHistory[]"
           :key="item.id"
           v-bind="item"
           class="cursor-pointer transition-colors"
-          :class="{ 'bg-muted': selectedItem.id === item.id }"
-          @click="selectedItem = selectedItem.id === item.id ? {} : item"
+          :class="{ 'bg-muted': selectedItem?.id === item.id }"
+          @click="selectedItem = selectedItem?.id === item.id ? null : item"
         />
         <div class="my-4 font-mono" />
       </div>
@@ -40,7 +43,7 @@ onMounted(() => {
     <Separator orientation="vertical" class="h-auto" />
     <div class="relative grow">
       <HistoryDetail
-        v-if="selectedItem.id"
+        v-if="selectedItem?.id"
         v-bind="selectedItem"
         class="h-full"
       />
