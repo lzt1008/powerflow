@@ -3,26 +3,27 @@ import type { ChargingHistory, ChargingHistoryDetail } from '@/bindings'
 import { commands } from '@/bindings'
 import CustomChartTooltip from '@/components/chart/CustomChartTooltip.vue'
 import { shortEnDistanceLocale } from '@/lib/format'
-import { error } from '@tauri-apps/plugin-log'
+import { error as logerror } from '@tauri-apps/plugin-log'
 import { format, formatDuration, intervalToDuration } from 'date-fns'
-import { Loader2 } from 'lucide-vue-next'
+import { Download, EllipsisVertical, Loader2, Trash2 } from 'lucide-vue-next'
 
 const props = defineProps<ChargingHistory>()
 
-const isLoading = ref(false)
-const state = asyncComputed(
-  () => commands.getDetailById(props.id),
-  { status: 'ok', data: {} as ChargingHistoryDetail },
+const isLoading = ref(true)
+const error = ref()
+const data = asyncComputed(
+  () => commands.getDetailById(props.id)
+    .then((r) => {
+      if (r.status === 'error') {
+        error.value = r.error
+        logerror(r.error)
+        return {} as ChargingHistoryDetail
+      }
+      return r.data
+    }),
+  {} as ChargingHistoryDetail,
   isLoading,
 )
-
-const data = computed(() => {
-  if (state.value.status === 'ok') {
-    return state.value.data
-  }
-  error(state.value.error)
-  return {} as ChargingHistoryDetail
-})
 </script>
 
 <template>
@@ -30,16 +31,41 @@ const data = computed(() => {
     <div v-if="isLoading" class="w-full h-full flex items-center justify-center">
       <Loader2 class="animate-spin" />
     </div>
-    <div v-else-if="state.status === 'error'" class="w-full h-full flex items-center justify-center text-red-500">
-      {{ state.error }}
+    <div v-else-if="error" class="w-full h-full flex items-center justify-center text-red-500">
+      {{ error }}
     </div>
     <div v-else class="px-6 pb-8">
-      <h1 class="text-2xl font-bold">
-        {{ name || 'Unknown' }}
-      </h1>
-      <h2 class="text-sm font-bold mt-1 text-muted-foreground">
-        {{ adapterName }}
-      </h2>
+      <div class="flex justify-between items-center">
+        <div>
+          <h1 class="text-2xl font-bold">
+            {{ name || 'Unknown' }}
+          </h1>
+          <h2 class="text-sm font-bold mt-1 text-muted-foreground">
+            with {{ adapterName }}
+          </h2>
+        </div>
+        <div>
+          <DropdownMenu>
+            <DropdownMenuTrigger class="p-2 rounded-md hover:bg-muted transition-colors">
+              <EllipsisVertical class="w-4 h-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              :side-offset="10"
+              align="end"
+            >
+              <DropdownMenuItem>
+                <Download class="w-4 h-4" />
+                Export Data
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem class="text-red-500 focus:text-red-500 focus:bg-red-500/10">
+                <Trash2 />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
       <div class="mt-4 grid gap-4 grid-cols-3">
         <div class="space-y-2">
           <div class="text-sm font-medium text-muted-foreground">

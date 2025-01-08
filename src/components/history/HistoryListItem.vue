@@ -18,7 +18,7 @@ defineProps<ChargingHistory>()
       <div class="flex flex-col ml-4">
         <span class="flex items-baseline gap-2 relative">
           <span class="flex items-center gap-1 font-medium">{{ fromLevel }}% <ChevronRight class="size-4" /> {{ endLevel }}%</span>
-          <div class="text-muted-foreground font-mono text-xs">
+          <div class="text-muted-foreground font-mono text-xs truncate">
             {{ formatDuration(
               intervalToDuration({
                 start: timestamp * 1000,
@@ -30,7 +30,7 @@ defineProps<ChargingHistory>()
           </div>
         </span>
 
-        <span class="text-muted-foreground font-mono text-xs">{{
+        <span class="text-muted-foreground font-mono text-xs truncate">{{
           formatDistanceToNow(new Date(timestamp * 1000 + chargingTime * 1000), { addSuffix: true })
         }}</span>
       </div>
