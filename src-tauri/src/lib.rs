@@ -162,6 +162,7 @@ pub fn create_specta() -> tauri_specta::Builder {
 pub fn run() {
     let specta = create_specta();
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(
             tauri_plugin_log::Builder::new()

@@ -68,3 +68,4 @@ chrono = { version = "0.4.39", features = [ "serde" ] }
 derive_more = { version = "1.0.0", features = [ "deref" ] }
 cocoa = "0.26.0"
 objc = "0.2.7"
+tauri-plugin-dialog = "2"
