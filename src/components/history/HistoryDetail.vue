@@ -5,6 +5,7 @@ import CustomChartTooltip from '@/components/chart/CustomChartTooltip.vue'
 import { useHistory } from '@/composables/useHistory'
 import { shortEnDistanceLocale } from '@/lib/format'
 import { save } from '@tauri-apps/plugin-dialog'
+import { create } from '@tauri-apps/plugin-fs'
 import { error as logerror } from '@tauri-apps/plugin-log'
 import { format, formatDuration, intervalToDuration } from 'date-fns'
 import { Download, EllipsisVertical, Loader2, Trash2 } from 'lucide-vue-next'
@@ -39,8 +40,10 @@ async function exportData() {
     ],
   })
 
-  if(data.value) {
-
+  if (path) {
+    const file = await create(path)
+    await file.write(new TextEncoder().encode(JSON.stringify(data.value)))
+    await file.close()
   }
 }
 </script>
