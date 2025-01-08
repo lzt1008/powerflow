@@ -11,6 +11,7 @@
     "core:window:allow-hide",
     "core:window:allow-start-dragging",
     "shell:allow-open",
-    "notification:default"
+    "notification:default",
+    "dialog:allow-save"
   ]
 }

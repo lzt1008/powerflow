@@ -4,6 +4,7 @@ import { commands } from '@/bindings'
 import CustomChartTooltip from '@/components/chart/CustomChartTooltip.vue'
 import { useHistory } from '@/composables/useHistory'
 import { shortEnDistanceLocale } from '@/lib/format'
+import { save } from '@tauri-apps/plugin-dialog'
 import { error as logerror } from '@tauri-apps/plugin-log'
 import { format, formatDuration, intervalToDuration } from 'date-fns'
 import { Download, EllipsisVertical, Loader2, Trash2 } from 'lucide-vue-next'
@@ -26,6 +27,22 @@ const data = asyncComputed(
   {} as ChargingHistoryDetail,
   isLoading,
 )
+
+async function exportData() {
+  const path = await save({
+    title: 'Export Data',
+    filters: [
+      {
+        name: 'Json Filter',
+        extensions: ['json'],
+      },
+    ],
+  })
+
+  if(data.value) {
+
+  }
+}
 </script>
 
 <template>
@@ -55,7 +72,9 @@ const data = asyncComputed(
               :side-offset="10"
               align="end"
             >
-              <DropdownMenuItem>
+              <DropdownMenuItem
+                @click="exportData"
+              >
                 <Download class="w-4 h-4" />
                 Export Data
               </DropdownMenuItem>
