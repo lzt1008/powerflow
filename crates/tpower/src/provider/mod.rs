@@ -192,7 +192,9 @@ impl From<&IORegistry> for NormalizedResource {
                 brightness_power: 0.,
                 heatpipe_power: 0.,
                 battery_level: io.current_capacity,
-                absolute_battery_level: io.current_capacity as f32 / io.max_capacity as f32 * 100.,
+                absolute_battery_level: io.apple_raw_current_capacity as f32
+                    / io.apple_raw_max_capacity as f32
+                    * 100.,
                 temperature: io.temperature as f32 / 100.,
 
                 adapter_watts: io.adapter_details.watts.unwrap_or_default() as f32,
@@ -225,11 +227,13 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
             data: NormalizedData {
                 system_in: smc.delivery_rate,
                 system_load: smc.system_total,
-                battery_power: smc.battery_rate,
+                battery_power: smc.battery_rate.max(smc.delivery_rate - smc.system_total),
                 brightness_power: smc.brightness,
                 heatpipe_power: smc.heatpipe,
                 battery_level: io.current_capacity,
-                absolute_battery_level: io.current_capacity as f32 / io.max_capacity as f32 * 100.,
+                absolute_battery_level: io.apple_raw_current_capacity as f32
+                    / io.apple_raw_max_capacity as f32
+                    * 100.,
                 temperature: smc.temperature,
                 adapter_power: smc.delivery_rate
                     + io.ptd()
