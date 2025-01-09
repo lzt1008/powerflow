@@ -131,6 +131,10 @@ fn spawn_history_recorder(
                 || (!staged.is_empty() && full_charged)
             {
                 let taked = mem::take(staged);
+                // filter out short history
+                if taked.len() <= 2 {
+                    continue;
+                }
 
                 let history = summrize_history(app.app_handle(), taked, typ);
                 let res = save_charging_history(&db, history).await.unwrap();
