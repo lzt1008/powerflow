@@ -23,7 +23,6 @@ io-kit-sys = "0.4.1"
 anyhow = "1.0.94"
 humantime = "2.1.0"
 indexmap = "2.7.0"
-enum_dispatch = "0.3.13"
 plist = "1.7.0"
 serde = { version = "1.0.216", features = [ "derive" ] }
 specta = { optional = true, version = "=2.0.0-rc.20", features = [

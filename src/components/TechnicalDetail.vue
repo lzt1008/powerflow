@@ -32,7 +32,7 @@ const power = usePower()
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          {{ (power.io.appleRawMaxCapacity / power.io.designCapacity * 100).toFixed(1) }}%
+          {{ power.absoluteBatteryLevel.toFixed(1) }}%
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
@@ -49,7 +49,7 @@ const power = usePower()
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          {{ power.io.cycleCount }} {{ $t('times') }}
+          {{ power.cycleCount }} {{ $t('times') }}
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
@@ -66,11 +66,13 @@ const power = usePower()
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          {{ power.io.appleRawCurrentCapacity }}mAh
+          {{ power.currentCapacity }}mAh
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="flex gap-2 text-xs text-muted-foreground">
-          Design Capacity: <span v-if="!power.isLoading">{{ power.io.designCapacity }}mAh</span>
+          Max Capacity: <span v-if="!power.isLoading">{{
+            power.maxCapacity
+          }}mAh</span>
           <Skeleton v-else class="w-12 h-4" />
         </p>
       </CardContent>

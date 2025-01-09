@@ -30,11 +30,12 @@ const power = usePower()
         class="text-sm font-medium truncate"
         :class="power.isCharging ? 'text-green-500' : 'text-muted-foreground'"
       >
-        <span v-if="power.isCharging && power.fullyCharged">{{ $t('status.fully_charged') }}</span>
+        <span v-if="power.isCharging && power.batteryLevel === 100">{{ $t('status.fully_charged') }}</span>
         <template v-else>
           <span class="font-semibold">{{
             formatDistanceToNow(
-              addMinutes(new Date(), power.timeRemaining),
+              // TODO: is this right?
+              addMinutes(new Date(), power.timeRemain.secs),
               { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
             )
           }}</span>

@@ -12,11 +12,11 @@ const { preference, isLoading } = usePreferenceAsync()
       v-else-if="preference.animationsEnabled"
       class="text-4xl font-bold"
       :format="{ maximumFractionDigits: 1, minimumFractionDigits: 1 }"
-      :value="power.isCharging ? power.systemIn : power.systemPower"
+      :value="power.isCharging ? power.systemIn : power.systemLoad"
       suffix="w"
     />
     <div v-else class="text-4xl leading-[54px] font-bold">
-      {{ (power.isCharging ? power.systemIn : power.systemPower).toFixed(1) }}w
+      {{ (power.isCharging ? power.systemIn : power.systemLoad).toFixed(1) }}w
     </div>
   </div>
 </template>

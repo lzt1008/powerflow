@@ -60,12 +60,12 @@ const power = usePower()
           :icon="CloudLightningIcon"
           color="text-yellow-500"
         >
-          {{ formatter.format(power.systemIn + power.powerLoss / 1000) }}
+          {{ formatter.format(power.systemIn + power.efficiencyLoss / 1000) }}
         </FlowItem>
 
         <CommonTooltip
-          v-if="power.isCharging && power.io.powerTelemetryData?.adapterEfficiencyLoss !== undefined"
-          :content="`${$t('flow.power_loss')}: ${power.io.powerTelemetryData.adapterEfficiencyLoss}mw`"
+          v-if="power.isCharging && power.efficiencyLoss !== 0"
+          :content="`${$t('flow.power_loss')}: ${power.efficiencyLoss}mw`"
           as-child
         >
           <Shimmer
@@ -84,7 +84,7 @@ const power = usePower()
         <div class="flex flex-col items-center gap-2 bg-muted/50 rounded-lg border p-2">
           <div v-if="!power.isRemote" class="flex gap-4" color="text-blue-500">
             <FlowItem :tooltip="$t('flow.screen_power')" :icon="Monitor" color="text-blue-500">
-              {{ formatter.format(power.screenPower || 0) }}
+              {{ formatter.format(power.brightnessPower || 0) }}
             </FlowItem>
 
             <FlowItem :tooltip="$t('flow.heatpipe_power')" :icon="Cpu" color="text-indigo-500">
@@ -97,7 +97,7 @@ const power = usePower()
             :icon="power.isRemote ? Smartphone : Laptop"
             color="text-cyan-500"
           >
-            {{ formatter.format(power.systemPower) }}
+            {{ formatter.format(power.systemLoad) }}
           </FlowItem>
         </div>
 

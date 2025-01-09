@@ -56,7 +56,7 @@ fn summrize_history(
     app: &AppHandle,
     staged: Vec<ChargingHistoryStage>,
     typ: DeviceType,
-) -> ChargingHistory {
+) -> Option<ChargingHistory> {
     let name = match typ {
         DeviceType::Local => get_mac_name(),
         DeviceType::Remote(ref udid) => app
@@ -68,14 +68,14 @@ fn summrize_history(
     }
     .unwrap_or_default();
 
-    let from_level = staged.first().unwrap().data.battery_level;
-    let end_level = staged.last().unwrap().data.battery_level;
-    let timestamp = staged.first().unwrap().data.last_update;
-    let duration = staged.last().unwrap().data.last_update - timestamp;
+    let (first, last) = (staged.first()?, staged.last()?);
 
-    let adapter_name = staged
-        .last()
-        .unwrap()
+    let from_level = first.data.battery_level;
+    let end_level = last.data.battery_level;
+    let timestamp = first.data.last_update;
+    let duration = last.data.last_update - timestamp;
+
+    let adapter_name = last
         .data
         .adapter_name
         .clone()
@@ -90,7 +90,7 @@ fn summrize_history(
     });
     let (curve, raw) = staged.into_iter().map(|s| (s.data, s.raw)).unzip();
 
-    ChargingHistory {
+    Some(ChargingHistory {
         is_remote: matches!(typ, DeviceType::Remote(_)),
         name,
         udid: match typ {
@@ -108,7 +108,7 @@ fn summrize_history(
             curve,
             raw,
         },
-    }
+    })
 }
 
 fn spawn_history_recorder(
@@ -136,11 +136,24 @@ fn spawn_history_recorder(
                     continue;
                 }
 
-                let history = summrize_history(app.app_handle(), taked, typ);
-                let res = save_charging_history(&db, history).await.unwrap();
-                log::info!("history saved: {:#?}", res.last_insert_rowid());
+                let history = summrize_history(app.app_handle(), taked, typ).unwrap();
 
-                HistoryRecordedEvent.emit(&app).unwrap();
+                match save_charging_history(&db, &history).await {
+                    Ok(res) => {
+                        log::info!(
+                            "history of {} saved: {}",
+                            history.udid,
+                            res.last_insert_rowid()
+                        );
+                    }
+                    Err(e) => {
+                        log::error!("history save failed: {:#?}", e);
+                    }
+                }
+
+                HistoryRecordedEvent.emit(&app).unwrap_or_else(|err| {
+                    log::error!("Failed to emit HistoryRecordedEvent: {:?}", err)
+                });
             }
 
             if staged
@@ -166,9 +179,11 @@ pub fn setup_history_recorder(app: AppHandle) {
     PowerTickEvent::listen(&app, move |TypedEvent { payload, .. }| {
         let tx = tx_cloned.clone();
         async_runtime::spawn(async move {
-            tx.send((DeviceType::Local, NormalizedResource::from(&payload)))
+            tx.send((DeviceType::Local, payload.data))
                 .await
-                .unwrap();
+                .unwrap_or_else(|err| {
+                    log::error!("Failed to send PowerTickEvent: {:#?}", err);
+                })
         });
     });
 
@@ -176,10 +191,11 @@ pub fn setup_history_recorder(app: AppHandle) {
     DevicePowerTickEvent::listen(&app, move |TypedEvent { payload, .. }| {
         let tx = tx_cloned.clone();
         async_runtime::spawn(async move {
-            let data = NormalizedResource::from(&payload);
-            tx.send((DeviceType::Remote(payload.udid), data))
+            tx.send((DeviceType::Remote(payload.udid), payload.data))
                 .await
-                .unwrap();
+                .unwrap_or_else(|err| {
+                    log::error!("Failed to send DevicePowerTickEvent: {:#?}", err);
+                })
         });
     });
     spawn_history_recorder(app.clone(), rx);

@@ -59,7 +59,7 @@ pub async fn delete_history_by_id(
 
 pub async fn save_charging_history(
     conn: &SqlitePool,
-    history: history::ChargingHistory,
+    history: &history::ChargingHistory,
 ) -> Result<SqliteQueryResult, sqlx::Error> {
     let detail = serde_json::to_vec(&history.detail).unwrap();
     let duration = history.duration;

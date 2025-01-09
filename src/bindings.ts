@@ -99,17 +99,15 @@ export type Action =
  * Unsubcribing and resubscribing may recover the notification system.
  */
 "NotificationStopped" | "Paired"
-export type AdapterDetails = { adapterVoltage: number | null; isWireless: boolean | null; watts: number | null; name: string | null; current: number | null; description: string | null }
 export type ChargingHistory = { id: number; fromLevel: number; endLevel: number; chargingTime: number; timestamp: number; name: string; udid: string; isRemote: number; adapterName: string }
 export type ChargingHistoryDetail = { avg: NormalizedData; peak: NormalizedData; curve: NormalizedResource[]; raw: string[] }
 export type DeviceEvent = { udid: string; name: string; interface: InterfaceType; action: Action }
-export type DevicePowerTickEvent = { udid: string; io: IORegistry }
+export type DevicePowerTickEvent = { udid: string; data: NormalizedResource }
 export type Duration = { secs: number; nanos: number }
 export type HidePopoverEvent = null
 export type HistoryRecordedEvent = null
-export type IORegistry = { adapterDetails: AdapterDetails; powerTelemetryData: PowerTelemetryData | null; absoluteCapacity: number; amperage: number; voltage: number; appleRawBatteryVoltage: number | null; appleRawCurrentCapacity: number; appleRawMaxCapacity: number; currentCapacity: number; cycleCount: number; designCapacity: number; fullyCharged: boolean; instantAmperage: number; isCharging: boolean; maxCapacity: number; temperature: number; timeRemaining: number; updateTime: number }
 export type InterfaceType = "Unknown" | "USB" | "WiFi"
-export type NormalizedData = { systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
+export type NormalizedData = { systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; efficiencyLoss: number; 
 /**
  * 0 if not available
  */
@@ -118,7 +116,7 @@ brightnessPower: number;
  * 0 if not available
  */
 heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }
-export type NormalizedResource = ({ systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; 
+export type NormalizedResource = ({ systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; efficiencyLoss: number; 
 /**
  * 0 if not available
  */
@@ -126,12 +124,10 @@ brightnessPower: number;
 /**
  * 0 if not available
  */
-heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null }
-export type PowerTelemetryData = { adapterEfficiencyLoss: number; batteryPower: number; systemCurrentIn: number; systemEnergyConsumed: number; systemLoad: number; systemPowerIn: number; systemVoltageIn: number }
-export type PowerTickEvent = { io: IORegistry; smc: SMCPowerData }
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null; cycleCount: number; currentCapacity: number; maxCapacity: number }
+export type PowerTickEvent = { data: NormalizedResource }
 export type PowerUpdatedEvent = string
 export type PreferenceEvent = { theme: Theme } | { animationsEnabled: boolean } | { updateInterval: number } | { language: string } | { statusBarItem: StatusBarItem } | { statusBarShowCharging: boolean }
-export type SMCPowerData = { batteryRate: number; deliveryRate: number; systemTotal: number; heatpipe: number; brightness: number; fullChargeCapacity: number; currentCapacity: number; chargingStatus: number; timeToEmpty: number; timeToFull: number; temperature: number }
 export type StatusBarItem = "system" | "screen" | "heatpipe"
 export type Theme = "light" | "dark" | "system"
 export type WindowLoadedEvent = null

@@ -31,13 +31,7 @@ pub struct DeviceState(RwLock<HashMap<String, (String, HashSet<InterfaceType>)>>
 #[serde(rename_all = "camelCase")]
 pub struct DevicePowerTickEvent {
     pub udid: String,
-    pub io: IORegistry,
-}
-
-impl From<&DevicePowerTickEvent> for NormalizedResource {
-    fn from(value: &DevicePowerTickEvent) -> Self {
-        NormalizedResource::from(&value.io)
-    }
+    pub data: NormalizedResource,
 }
 
 #[derive(Debug)]
@@ -96,8 +90,8 @@ pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
                     for (device, conn) in devices.iter() {
                         match get_device_ioreg(conn) {
                             Ok(res) => DevicePowerTickEvent {
-                                io: res,
                                 udid: device.udid.clone(),
+                                data: NormalizedResource::from(&res),
                             }.emit(&handle).unwrap(),
                             Err(err) => {
                                 log::error!("Failed to get IORegistry: {err}");

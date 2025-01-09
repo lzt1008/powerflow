@@ -12,7 +12,6 @@ use core_foundation::{
     dictionary::{CFDictionary, CFMutableDictionaryRef},
 };
 use derive_more::Add;
-use enum_dispatch::enum_dispatch;
 use io_kit_sys::{
     ret::kIOReturnSuccess, IOMasterPort, IORegistryEntryCreateCFProperties,
     IOServiceGetMatchingService, IOServiceMatching,
@@ -26,56 +25,7 @@ use crate::{
     util::{dict_into, skip_until},
 };
 
-pub mod local;
 pub mod remote;
-
-pub use local::LocalResource;
-pub use remote::RemoteResource;
-
-#[enum_dispatch]
-pub trait Resource {
-    fn name(&self) -> String;
-    /// The amount of power in (mW)
-    fn system_in(&self) -> f32;
-
-    /// The amount of system power usage (mW)
-    fn system_load(&self) -> f32;
-
-    /// The amount of battery power usage (mW)
-    fn battery_power(&self) -> f32;
-
-    /// Usually system_in + adapter_efficiency_loss
-    fn adapter_power(&self) -> f32;
-
-    fn brightness_power(&self) -> f32 {
-        0.0
-    }
-
-    fn absolute_battery_level(&self) -> f32;
-
-    fn is_charging(&self) -> bool;
-
-    fn time_remain(&self) -> Duration;
-
-    fn last_update(&self) -> Duration;
-
-    fn is_local(&self) -> bool;
-
-    fn temperature(&self) -> f32;
-
-    fn raw_data(&self) -> &IORegistry;
-
-    fn smc(&self) -> Option<&SMCPowerData>;
-
-    fn update(&mut self, data: MergedPowerData);
-}
-
-#[enum_dispatch(Resource)]
-#[derive(Debug)]
-pub enum PowerResource {
-    Local(LocalResource),
-    Remote(RemoteResource),
-}
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
@@ -86,6 +36,9 @@ pub struct NormalizedResource {
     pub time_remain: Duration,
     pub last_update: i64,
     pub adapter_name: Option<String>,
+    pub cycle_count: i32,
+    pub current_capacity: i32,
+    pub max_capacity: i32,
     #[serde(flatten)]
     pub data: NormalizedData,
 }
@@ -98,6 +51,7 @@ pub struct NormalizedData {
     pub system_load: f32,
     pub battery_power: f32,
     pub adapter_power: f32,
+    pub efficiency_loss: f32,
     /// 0 if not available
     pub brightness_power: f32,
     /// 0 if not available
@@ -118,6 +72,7 @@ impl NormalizedData {
             system_load: self.system_load.max(other.system_load),
             battery_power: self.battery_power.max(other.battery_power),
             adapter_power: self.adapter_power.max(other.adapter_power),
+            efficiency_loss: self.efficiency_loss.max(other.efficiency_loss),
             battery_level: self.battery_level.max(other.battery_level),
             absolute_battery_level: self
                 .absolute_battery_level
@@ -141,6 +96,7 @@ impl Div<f32> for NormalizedData {
             system_load: self.system_load / rhs,
             battery_power: self.battery_power / rhs,
             adapter_power: self.adapter_power / rhs,
+            efficiency_loss: self.efficiency_loss / rhs,
             brightness_power: self.brightness_power / rhs,
             heatpipe_power: self.heatpipe_power / rhs,
             battery_level: self.battery_level / rhs as i32,
@@ -163,16 +119,18 @@ impl Deref for NormalizedResource {
 
 impl From<&IORegistry> for NormalizedResource {
     fn from(io: &IORegistry) -> Self {
-        let (system_in, system_load, battery_power, adapter_power) = if let Some(d) = io.ptd() {
-            (
-                d.system_power_in as f32 / 1000.,
-                d.system_load as f32 / 1000.,
-                d.battery_power as f32 / 1000.,
-                (d.system_power_in + d.adapter_efficiency_loss) as f32 / 1000.,
-            )
-        } else {
-            Default::default()
-        };
+        let (system_in, system_load, battery_power, adapter_power, efficiency_loss) =
+            if let Some(d) = io.ptd() {
+                (
+                    d.system_power_in as f32 / 1000.,
+                    d.system_load as f32 / 1000.,
+                    d.battery_power as f32 / 1000.,
+                    (d.system_power_in + d.adapter_efficiency_loss) as f32 / 1000.,
+                    d.adapter_efficiency_loss as f32 / 1000.,
+                )
+            } else {
+                Default::default()
+            };
 
         Self {
             is_local: false,
@@ -184,11 +142,15 @@ impl From<&IORegistry> for NormalizedResource {
                 .name
                 .clone()
                 .or_else(|| io.adapter_details.description.clone()),
+            cycle_count: io.cycle_count,
+            max_capacity: io.apple_raw_max_capacity,
+            current_capacity: io.apple_raw_current_capacity,
             data: NormalizedData {
                 system_in,
                 system_load,
                 battery_power,
                 adapter_power,
+                efficiency_loss,
                 brightness_power: 0.,
                 heatpipe_power: 0.,
                 battery_level: io.current_capacity,
@@ -224,10 +186,16 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                 .name
                 .clone()
                 .or_else(|| io.adapter_details.description.clone()),
+            cycle_count: io.cycle_count,
+            max_capacity: io.apple_raw_max_capacity,
+            current_capacity: io.apple_raw_current_capacity,
             data: NormalizedData {
                 system_in: smc.delivery_rate,
                 system_load: smc.system_total,
                 battery_power: smc.battery_rate.max(smc.delivery_rate - smc.system_total),
+                efficiency_loss: io
+                    .ptd()
+                    .map_or(0.0, |d| d.adapter_efficiency_loss as f32 / 1000.),
                 brightness_power: smc.brightness,
                 heatpipe_power: smc.heatpipe,
                 battery_level: io.current_capacity,

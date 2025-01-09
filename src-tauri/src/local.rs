@@ -7,7 +7,6 @@ use tauri_plugin_pinia::ManagerExt;
 use tauri_specta::Event;
 use tokio::{select, sync::mpsc, time};
 use tpower::{
-    de::IORegistry,
     ffi::smc::{SMCConnection, SMCPowerData, SMCReadSensor},
     provider::{get_mac_ioreg, NormalizedResource},
 };
@@ -53,14 +52,7 @@ impl PowerUpdatedEvent {
 #[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct PowerTickEvent {
-    pub io: IORegistry,
-    pub smc: SMCPowerData,
-}
-
-impl From<&PowerTickEvent> for NormalizedResource {
-    fn from(value: &PowerTickEvent) -> Self {
-        NormalizedResource::from((&value.io, &value.smc))
-    }
+    pub data: NormalizedResource,
 }
 
 pub fn start_sender<R: Runtime>(
@@ -93,8 +85,7 @@ pub fn start_sender<R: Runtime>(
                         .emit(&app)
                         .unwrap();
                     PowerTickEvent {
-                        io: get_mac_ioreg().unwrap(),
-                        smc
+                        data: (&get_mac_ioreg().unwrap(), &smc).into(),
                     }.emit(&app).unwrap();
                 }
                 Some(msg) = rx.recv() => match msg {
@@ -104,8 +95,7 @@ pub fn start_sender<R: Runtime>(
                             .emit(&app)
                             .unwrap();
                         PowerTickEvent {
-                            io: get_mac_ioreg().unwrap(),
-                            smc
+                            data:  (&get_mac_ioreg().unwrap(), &smc).into()
                         }.emit(&app).unwrap();
                     },
                     SenderMessage::ChangeInterval(interval) => {

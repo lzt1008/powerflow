@@ -1,4 +1,4 @@
-import type { InterfaceType, IORegistry, SMCPowerData } from '@/bindings'
+import type { InterfaceType, NormalizedResource } from '@/bindings'
 import type { Reactive } from 'vue'
 import { events } from '@/bindings'
 import { useDocumentVisibility } from '@vueuse/core'
@@ -19,8 +19,7 @@ export interface StatisticData {
 }
 
 interface RawPowerData {
-  smc: SMCPowerData
-  io: IORegistry
+  data: NormalizedResource
   statistics: StatisticData[]
 }
 
@@ -29,24 +28,15 @@ function trimStatistics(statistics: StatisticData[]) {
     statistics.shift()
 }
 
-function calcBatteryLevel(io: IORegistry): number {
-  if (!io.appleRawMaxCapacity)
-    return 0
-  return (io.appleRawCurrentCapacity / io.appleRawMaxCapacity) * 100
-}
-
 const localPowerData: Reactive<RawPowerData> = reactive({
-  smc: {} as SMCPowerData,
-  io: {} as IORegistry,
+  data: {} as NormalizedResource,
   statistics: [],
 })
 
 let localUpdateCount = 0
 
-events.powerTickEvent.listen(async ({ payload }) => {
-  const { smc, io } = payload
-  localPowerData.smc = smc
-  localPowerData.io = io
+events.powerTickEvent.listen(async ({ payload: { data } }) => {
+  localPowerData.data = data
 
   localUpdateCount++
   if (localUpdateCount < LOCAL_UPDATE_INTERVAL)
@@ -55,16 +45,33 @@ events.powerTickEvent.listen(async ({ payload }) => {
 
   trimStatistics(localPowerData.statistics)
 
-  const levelRaw = calcBatteryLevel(localPowerData.io)
-
   localPowerData.statistics.push({
     'time': new Date().toLocaleTimeString(),
-    'System Power': +smc.systemTotal.toFixed(2),
-    'System In': smc.deliveryRate < 0.01 ? 0 : smc.deliveryRate,
-    'Battery Level': +levelRaw.toFixed(2),
-    'Screen Power': smc.brightness || 0,
-    'Heatpipe Power': smc.heatpipe || 0,
+    'System Power': data.systemLoad,
+    'System In': data.systemIn,
+    'Battery Level': data.batteryLevel,
+    'Screen Power': data.brightnessPower,
+    'Heatpipe Power': data.heatpipePower,
   })
+})
+
+events.devicePowerTickEvent.listen(({ payload: { data, udid } }) => {
+  const deviceData = getOrCreateDeviceData(udid)
+  deviceData.data = data
+
+  const statistics = deviceData.statistics
+  trimStatistics(statistics)
+
+  const time = new Date(data.lastUpdate * 1000).toLocaleTimeString()
+
+  if (!statistics.length || time !== statistics[statistics.length - 1]?.time) {
+    statistics.push({
+      time,
+      'System Power': data.systemLoad,
+      'System In': data.systemIn,
+      'Battery Level': data.batteryLevel,
+    })
+  }
 })
 
 export type RemotePowerData = RawPowerData & {
@@ -86,8 +93,7 @@ const power = reactive<PowerData>({
 function getOrCreateDeviceData(udid: string): RemotePowerData {
   if (!power.remote[udid]) {
     power.remote[udid] = {
-      io: {} as IORegistry,
-      smc: {} as SMCPowerData,
+      data: {} as NormalizedResource,
       statistics: [],
       name: '',
       offline: false,
@@ -112,29 +118,6 @@ events.deviceEvent.listen(({ payload }) => {
   }
 })
 
-events.devicePowerTickEvent.listen(({ payload }) => {
-  const deviceData = getOrCreateDeviceData(payload.udid)
-  deviceData.io = payload.io
-
-  const statistics = deviceData.statistics
-  trimStatistics(statistics)
-
-  const level = calcBatteryLevel(payload.io)
-  const powerTelemetryData = payload.io.powerTelemetryData
-  // TODO
-  const power = payload.io.amperage * payload.io.voltage / 1000
-  const time = new Date(payload.io.updateTime * 1000).toLocaleTimeString()
-
-  if (!statistics.length || time !== statistics[statistics.length - 1]?.time) {
-    statistics.push({
-      time,
-      'System Power': (powerTelemetryData?.systemLoad || power || 0) / 1000,
-      'System In': (powerTelemetryData?.systemPowerIn || power || 0) / 1000,
-      'Battery Level': +level.toFixed(2),
-    })
-  }
-})
-
 const vis = useDocumentVisibility()
 const tab = useTab()
 
@@ -143,10 +126,12 @@ const currentPower = computed<RawPowerData>(() => {
 })
 
 export function usePower() {
-  return computed<LocalPowerReturn | RemotePowerReturn>(() => {
-    const isLocal = tab.value === 'local'
-    return createPowerData(currentPower.value, isLocal)
-  })
+  return computed(() => ({
+    ...currentPower.value.data,
+    isLoading: Object.keys(currentPower.value.data).length === 0 || vis.value === 'hidden',
+    isRemote: tab.value !== 'local',
+    statistics: currentPower.value.statistics,
+  }))
 }
 
 export function usePowerData() {
@@ -164,94 +149,4 @@ export function usePowerRaw() {
       isLocal,
     } as any
   })
-}
-
-interface PowerReturnBase {
-  isLoading: boolean
-  isReady: boolean
-  statistics: StatisticData[]
-  io: IORegistry
-  isCharging: boolean
-  timeRemaining: number
-  adapterDetails?: {
-    name?: string
-    voltage?: number
-    amperage?: number
-    watts?: number
-  }
-  batteryLevel: number
-  batteryPower: number
-  systemPower: number
-  systemIn: number
-  powerLoss: number
-  temperature: number
-  fullyCharged: boolean
-}
-
-export interface LocalPowerReturn extends PowerReturnBase {
-  isRemote: false
-  smc: SMCPowerData
-  heatpipePower: number
-  screenPower: number
-}
-
-interface RemotePowerReturn extends PowerReturnBase {
-  isRemote: true
-}
-
-export function createPowerData(
-  { smc, io, statistics }: RawPowerData,
-  isLocal: boolean,
-): LocalPowerReturn | RemotePowerReturn {
-  const isIOEmpty = Object.keys(io).length === 0
-  const detail = io.adapterDetails
-
-  const base: Omit<PowerReturnBase, 'isCharging' | 'timeRemaining' | 'batteryPower'> = {
-    isLoading: isIOEmpty || vis.value === 'hidden',
-    isReady: false,
-    statistics,
-    io,
-    adapterDetails: {
-      voltage: detail?.adapterVoltage || 0,
-      amperage: detail?.current || 0,
-      watts: detail?.watts || 0,
-      name: detail?.name || detail?.description || '',
-    },
-    batteryLevel: calcBatteryLevel(io),
-    powerLoss: (io.powerTelemetryData?.adapterEfficiencyLoss ?? 0) / 1000,
-    temperature: (io.temperature || 0) / 100,
-    systemIn: 0,
-    systemPower: 0,
-    fullyCharged: io.fullyCharged,
-  }
-
-  if (isLocal) {
-    const localData: LocalPowerReturn = {
-      ...base,
-      isRemote: false,
-      smc,
-      isCharging: smc.chargingStatus === 1,
-      timeRemaining: smc.chargingStatus === 1 ? smc.timeToFull : smc.timeToEmpty,
-      systemPower: smc.systemTotal || 0,
-      screenPower: smc.brightness || 0,
-      heatpipePower: smc.heatpipe || 0,
-      systemIn: smc.deliveryRate || 0,
-      batteryPower: smc.chargingStatus === 1 ? Math.max(smc.batteryRate, smc.deliveryRate - smc.systemTotal) : (smc.batteryRate || 0),
-    }
-    return localData
-  }
-  else {
-    const ptd = io.powerTelemetryData
-    const p = io.amperage * io.voltage / 1000
-    const remoteData: RemotePowerReturn = {
-      ...base,
-      isRemote: true,
-      isCharging: io.isCharging,
-      timeRemaining: io.timeRemaining,
-      systemIn: (ptd?.systemPowerIn || p || 0) / 1000,
-      batteryPower: (ptd?.batteryPower || p || 0) / 1000,
-      systemPower: (ptd?.systemLoad || p || 0) / 1000,
-    }
-    return remoteData
-  }
 }

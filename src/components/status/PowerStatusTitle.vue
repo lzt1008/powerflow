@@ -8,13 +8,14 @@ const rawData = usePowerRaw()
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
   if (showRemainDuration.value) {
-    const minutes = power.value.timeRemaining
+    const minutes = power.value.timeRemain.secs
     const hours = Math.floor(minutes / 60)
 
     return `${hours}h ${minutes % 60}m`
   }
   return format(
-    addMinutes(new Date(), power.value.io.timeRemaining),
+    // TODO: Duration
+    addMinutes(new Date(), power.value.timeRemain.secs),
     'HH:mm',
   )
 })
@@ -38,9 +39,9 @@ const buttonText = computed(() => {
     v-else-if="power.isCharging"
     class="rounded-md dark:bg-green-600 bg-green-500 px-2 py-1 text-xs truncate font-mono"
   >
-    <span class="font-bold mr-1 text-background">{{ power.adapterDetails!.watts }}W</span>
-    <span class="text-[10px] text-background/80">({{ (power.adapterDetails?.voltage || 0) / 1000 }}V,{{
-      (power.adapterDetails?.amperage || 0) / 1000 }}A)</span>
+    <span class="font-bold mr-1 text-background">{{ power.adapterWatts }}W</span>
+    <span class="text-[10px] text-background/80">({{ power.adapterVoltage }}V,{{
+      power.adapterAmperage }}A)</span>
   </div>
   <div
     v-else

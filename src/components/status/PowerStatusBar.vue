@@ -36,16 +36,16 @@ interface BarData {
 const data = ref<BarData>()
 const handle = watchEffect(() => {
   const parts: Record<string, number> = {
-    systemTotal: power.value.systemPower,
+    systemTotal: power.value.systemLoad,
   }
 
   if (power.value.isCharging) {
     parts.batteryIn = power.value.systemIn - parts.systemTotal
-    parts.powerLoss = power.value.powerLoss
+    parts.powerLoss = power.value.efficiencyLoss
   }
 
   if (!power.value.isRemote) {
-    parts.screen = power.value.screenPower
+    parts.screen = power.value.brightnessPower
     parts.heatpipe = power.value.heatpipePower
     parts.systemOther = parts.systemTotal - parts.screen - parts.heatpipe
     delete parts.systemTotal
@@ -61,8 +61,8 @@ const handle = watchEffect(() => {
     })
 
   const sum = power.value.isCharging
-    ? power.value.systemIn + power.value.powerLoss
-    : power.value.systemPower
+    ? power.value.systemIn + power.value.efficiencyLoss
+    : power.value.systemLoad
   data.value = {
     parts: Object.entries(parts)
       .map(([key, value]) =>
