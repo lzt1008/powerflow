@@ -146,8 +146,8 @@ async function exportData() {
       <LineChart
         class="mt-8 max-h-[220px]"
         index="lastUpdate"
-        :data="data.curve"
-        :categories="['systemIn', 'batteryPower', 'systemLoad', 'batteryLevel']"
+        :data="data.curve.map(d => ({ ...d, lastUpdate: new Date(d.lastUpdate * 1000).toLocaleTimeString() }))"
+        :categories="['systemIn', 'batteryPower', 'systemLoad', 'absoluteBatteryLevel']"
         :custom-tooltip="CustomChartTooltip"
         :show-legend="false"
       />

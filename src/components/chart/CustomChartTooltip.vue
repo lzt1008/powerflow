@@ -16,12 +16,10 @@ const formatter = new Intl.NumberFormat('en-US', {
 
 <template>
   <Card class="text-sm">
-    <!-- <CardHeader v-if="title" class="p-3 mb-0">
-      <CardTitle>
-        {{ title }}
-      </CardTitle>
-    </CardHeader> -->
     <CardContent class="p-3 min-w-[100px] flex flex-col gap-2">
+      <div v-if="title" class="font-bold">
+        {{ title }}
+      </div>
       <div v-for="(item, key) in data.filter(i => i.name)" :key="key" class="flex justify-between">
         <div class="flex items-center">
           <span class="size-2.5 mr-2">
