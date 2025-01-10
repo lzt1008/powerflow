@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { MobileIcon } from '@radix-icons/vue'
 import { open } from '@tauri-apps/plugin-shell'
 import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
@@ -255,7 +254,7 @@ function SettingsSection(props: SettingsSectionProps) {
 
     <Separator />
 
-    <section class="space-y-8">
+    <!-- <section class="space-y-8">
       <SettingsSection title="Paired Devices" :icon="MobileIcon" />
       <div class="space-y-4">
         <SettingsItem
@@ -277,7 +276,7 @@ function SettingsSection(props: SettingsSectionProps) {
           </Button>
         </SettingsItem>
       </div>
-    </section>
+    </section> -->
 
     <Separator />
 
