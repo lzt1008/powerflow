@@ -23,13 +23,13 @@ status:
   battery_in: Battery In
   power_loss: Power Loss
   screen_power: Screen
-  heatpipe_power: SOC
+  heatpipe_power: Soc
   system_total: System
   system_other: Other
 
 flow:
   screen_power: Screen Power
-  heatpipe_power: SOC Power
+  heatpipe_power: Soc Power
   system_total: System Total
   system_in: System In
   battery_in: Battery In

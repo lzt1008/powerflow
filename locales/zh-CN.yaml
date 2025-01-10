@@ -22,12 +22,12 @@ status:
   battery_in: 电池输入
   power_loss: 损耗
   screen_power: 屏幕
-  heatpipe_power: SOC
+  heatpipe_power: Soc
   system_total: 整机
   system_other: 其他
 flow:
   screen_power: 屏幕功耗
-  heatpipe_power: SOC功耗
+  heatpipe_power: Soc功耗
   system_total: 系统总功耗
   system_in: 系统总输入
   battery_in: 电池充电功率
@@ -53,7 +53,7 @@ settings:
   background_monitoring_desc: 在后台运行应用程序
   status_bar: 状态栏
   status_bar_desc: 状态栏中显示的信息类型
-  heatpipe_power: SOC功率
+  heatpipe_power: Soc功率
   screen_power: 屏幕功率
   system_total: 系统总功率
   show_charging_power: 显示充电功率
