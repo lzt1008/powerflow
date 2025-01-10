@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { addMinutes, format } from 'date-fns'
+import { addSeconds, format } from 'date-fns'
 import { ArrowUpDown } from 'lucide-vue-next'
 
 const power = usePower()
@@ -8,14 +8,13 @@ const rawData = usePowerRaw()
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
   if (showRemainDuration.value) {
-    const minutes = power.value.timeRemain.secs
+    const minutes = power.value.timeRemain.secs / 60
     const hours = Math.floor(minutes / 60)
 
     return `${hours}h ${minutes % 60}m`
   }
   return format(
-    // TODO: Duration
-    addMinutes(new Date(), power.value.timeRemain.secs),
+    addSeconds(new Date(), power.value.timeRemain.secs),
     'HH:mm',
   )
 })

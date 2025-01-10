@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { localeMap } from '@/lib/format'
-import { addMinutes, formatDistanceToNow } from 'date-fns'
+import { addSeconds, formatDistanceToNow } from 'date-fns'
 import { BatteryCharging, BatteryFull, BatteryLow, BatteryMedium } from 'lucide-vue-next'
 
 const power = usePower()
@@ -34,8 +34,7 @@ const power = usePower()
         <template v-else>
           <span class="font-semibold mr-1">{{
             formatDistanceToNow(
-              // TODO: is this right?
-              addMinutes(new Date(), power.timeRemain.secs),
+              addSeconds(new Date(), power.timeRemain.secs),
               { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
             )
           }}</span>
