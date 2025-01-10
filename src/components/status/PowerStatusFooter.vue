@@ -32,7 +32,7 @@ const power = usePower()
       >
         <span v-if="power.isCharging && power.batteryLevel === 100">{{ $t('status.fully_charged') }}</span>
         <template v-else>
-          <span class="font-semibold">{{
+          <span class="font-semibold mr-1">{{
             formatDistanceToNow(
               // TODO: is this right?
               addMinutes(new Date(), power.timeRemain.secs),

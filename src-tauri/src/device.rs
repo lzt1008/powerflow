@@ -13,7 +13,6 @@ use tauri::{async_runtime, AppHandle, Manager};
 use tauri_specta::Event;
 use tokio::{select, sync::mpsc, task::spawn_blocking, time};
 use tpower::{
-    de::IORegistry,
     ffi::{
         core_foundation::runloop::CFRunLoopRun,
         wrapper::{Device, ServiceConnection},
