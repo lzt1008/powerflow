@@ -4,11 +4,11 @@ import { events } from '@/bindings'
 import { useHistory } from '@/composables/useHistory'
 import { Info } from 'lucide-vue-next'
 
-const { selectedItem, history } = useHistory()
+const { selectedItem, history: { data, isLoading, update } } = useHistory()
 
 onMounted(() => {
   const unlisten = events.historyRecordedEvent.listen(() => {
-    history.update()
+    update()
   })
 
   onScopeDispose(() => unlisten.then(f => f()))
@@ -17,7 +17,7 @@ onMounted(() => {
 
 <template>
   <div
-    v-if="!history.isLoading && !history.data"
+    v-if="!isLoading && !data?.length"
     class="w-full h-full flex flex-col gap-2 items-center justify-center text-muted-foreground"
   >
     <Info class="w-6 h-6" />
@@ -28,9 +28,9 @@ onMounted(() => {
       <h2 class="font-bold text-lg">
         History
       </h2>
-      <div v-if="!history.isLoading.value && history.data.value" class="flex flex-col gap-4 h-full overflow-y-auto pr-4">
+      <div v-if="!isLoading && data" class="flex flex-col gap-4 h-full overflow-y-auto pr-4">
         <HistoryListItem
-          v-for="item in history.data.value as ChargingHistory[]"
+          v-for="item in data as ChargingHistory[]"
           :key="item.id"
           v-bind="item"
           class="cursor-pointer transition-colors"
