@@ -19,14 +19,18 @@ jobs:
       APPLE_ID: ${{ secrets.APPLE_ID }}
       APPLE_ID_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
     steps:
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 21
-          # cache: 'pnpm'
       - uses: pnpm/action-setup@v4
         with:
           version: 9
           run_install: true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 21
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
 
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
