@@ -1,3 +1,5 @@
+use std::fs;
+
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use sqlx::{
@@ -82,11 +84,17 @@ pub async fn save_charging_history(
 pub fn setup_database(app: AppHandle) {
     block_in_place(|| {
         async_runtime::block_on(async move {
-            let db_path = app
+            let app_data_dir = app
                 .path()
                 .app_data_dir()
-                .expect("Failed to get app data directory")
-                .join(DEFAULT_DATABASE_NAME);
+                .expect("Failed to get app data directory");
+
+            let db_path = app_data_dir.join(DEFAULT_DATABASE_NAME);
+
+            if !app_data_dir.exists() {
+                fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+            }
+
             let db = SqlitePool::connect_with(
                 SqliteConnectOptions::new()
                     .filename(db_path)
