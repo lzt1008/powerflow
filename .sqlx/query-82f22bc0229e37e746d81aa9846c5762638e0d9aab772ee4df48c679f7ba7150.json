@@ -1,0 +1,12 @@
+{
+  "db_name": "SQLite",
+  "query": "INSERT INTO charging_histories (from_level, end_level, charging_time, timestamp, detail, name, udid, is_remote, adapter_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Right": 9
+    },
+    "nullable": []
+  },
+  "hash": "82f22bc0229e37e746d81aa9846c5762638e0d9aab772ee4df48c679f7ba7150"
+}

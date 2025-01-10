@@ -1,0 +1,20 @@
+{
+  "db_name": "SQLite",
+  "query": "SELECT detail FROM charging_histories WHERE id = ?",
+  "describe": {
+    "columns": [
+      {
+        "name": "detail",
+        "ordinal": 0,
+        "type_info": "Blob"
+      }
+    ],
+    "parameters": {
+      "Right": 1
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "24374ea5ffd7a494d251d111c562269af76ad13c8838e7c4fa32b02fd4dfb94c"
+}

@@ -26,4 +26,4 @@ dist-ssr
 target
 .auto-imports
 .env
-.sqlx
+db.sqlite
