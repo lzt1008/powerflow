@@ -11,13 +11,8 @@ jobs:
       matrix:
         include:
           - target: aarch64-apple-darwin
-            arch: apple-silicon
           - target: x86_64-apple-darwin
-            arch: intel
     runs-on: macos-latest
-    env:
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_ID_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -35,31 +30,15 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      # - name: Import Apple Developer Certificate
-      #   env:
-      #     APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-      #     APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      #     KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
-      #   run: |
-      #     echo $APPLE_CERTIFICATE | base64 --decode > certificate.p12
-      #     security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-      #     security default-keychain -s build.keychain
-      #     security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
-      #     security import certificate.p12 -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-      #     security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
-      #     security find-identity -v -p codesigning build.keychain
-      # - name: Verify Certificate
-      #   run: |
-      #     CERT_INFO=$(security find-identity -v -p codesigning build.keychain | grep "Apple Development")
-      #     CERT_ID=$(echo "$CERT_INFO" | awk -F'"' '{print $2}')
-      #     echo "CERT_ID=$CERT_ID" >> $GITHUB_ENV
-      #     echo "Certificate imported."
       - uses: tauri-apps/tauri-action@v0
         env:
+          # https://github.com/tauri-apps/tauri-action/issues/740
+          CI: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # APPLE_SIGNING_IDENTITY: ${{ env.CERT_ID }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+
         with:
           tagName: v__VERSION__
           releaseName: "Powerflow v__VERSION__"
