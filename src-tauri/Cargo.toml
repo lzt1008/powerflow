@@ -31,7 +31,7 @@ tpower = { features = [ "specta" ], workspace = true }
 tauri = { version = "2", features = [
   "macos-private-api",
   "tray-icon",
-  "config-toml"
+  "devtools",
 ] }
 tauri-plugin-opener = "2"
 tauri-plugin-positioner = { version = "2.0.0", features = [ "tray-icon" ] }
