@@ -55,8 +55,8 @@ async deleteHistoryById(id: number) : Promise<Result<number, string>> {
 export const events = __makeEvents__<{
 deviceEvent: DeviceEvent,
 devicePowerTickEvent: DevicePowerTickEvent,
-hidePopoverEvent: HidePopoverEvent,
 historyRecordedEvent: HistoryRecordedEvent,
+popoverEvent: PopoverEvent,
 powerTickEvent: PowerTickEvent,
 powerUpdatedEvent: PowerUpdatedEvent,
 preferenceEvent: PreferenceEvent,
@@ -64,8 +64,8 @@ windowLoadedEvent: WindowLoadedEvent
 }>({
 deviceEvent: "device-event",
 devicePowerTickEvent: "device-power-tick-event",
-hidePopoverEvent: "hide-popover-event",
 historyRecordedEvent: "history-recorded-event",
+popoverEvent: "popover-event",
 powerTickEvent: "power-tick-event",
 powerUpdatedEvent: "power-updated-event",
 preferenceEvent: "preference-event",
@@ -104,7 +104,6 @@ export type ChargingHistoryDetail = { avg: NormalizedData; peak: NormalizedData;
 export type DeviceEvent = { udid: string; name: string; interface: InterfaceType; action: Action }
 export type DevicePowerTickEvent = { udid: string; data: NormalizedResource }
 export type Duration = { secs: number; nanos: number }
-export type HidePopoverEvent = null
 export type HistoryRecordedEvent = null
 export type InterfaceType = "Unknown" | "USB" | "WiFi"
 export type NormalizedData = { systemIn: number; systemLoad: number; batteryPower: number; adapterPower: number; efficiencyLoss: number; 
@@ -125,6 +124,7 @@ brightnessPower: number;
  * 0 if not available
  */
 heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null; cycleCount: number; currentCapacity: number; maxCapacity: number }
+export type PopoverEvent = "show" | "hide"
 export type PowerTickEvent = { data: NormalizedResource }
 export type PowerUpdatedEvent = string
 export type PreferenceEvent = { theme: Theme } | { animationsEnabled: boolean } | { updateInterval: number } | { language: string } | { statusBarItem: StatusBarItem } | { statusBarShowCharging: boolean }

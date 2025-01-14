@@ -2,9 +2,7 @@ use std::collections::HashSet;
 
 use database::{setup_database, ChargingHistory};
 use device::{setup_device_listener, start_device_sender, DevicePowerTickEvent, DeviceState};
-use event::{
-    DeviceEvent, HidePopoverEvent, PowerUpdatedEvent, PreferenceEvent, Theme, WindowLoadedEvent,
-};
+use event::{DeviceEvent, PowerUpdatedEvent, PreferenceEvent, Theme, WindowLoadedEvent};
 use ext::WebviewWindowExt;
 use history::{setup_history_recorder, ChargingHistoryDetail, HistoryRecordedEvent};
 use local::{setup_sender_with_events, PowerTickEvent};
@@ -17,7 +15,7 @@ use objc2_app_kit::{
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use sqlx::{Pool, Sqlite};
 use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
-use tauri_specta::{collect_commands, collect_events, Event};
+use tauri_specta::{collect_commands, collect_events};
 use tpower::ffi::InterfaceType;
 use tray_icon::setup_tray_icon;
 use util::setup_traffic_light_positioner;
@@ -142,7 +140,6 @@ pub fn create_specta() -> tauri_specta::Builder {
             PreferenceEvent,
             PowerUpdatedEvent,
             WindowLoadedEvent,
-            HidePopoverEvent,
             HistoryRecordedEvent,
         ]);
 
@@ -174,6 +171,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_positioner::init())
         .plugin(tauri_plugin_pinia::init())
+        .plugin(tauri_plugin_nspopover::init())
         .invoke_handler(specta.invoke_handler())
         .manage(DeviceState::default())
         .menu(setup_menu)
@@ -214,8 +212,8 @@ pub fn run() {
 }
 
 fn handle_window_event(window: &Window, event: &WindowEvent) {
-    match window.label() {
-        "main" => match event {
+    if window.label() == "main" {
+        match event {
             WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
 
@@ -229,13 +227,6 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
                 println!("Theme changed to: {}", theme);
             }
             _ => (),
-        },
-        "popover" => match event {
-            WindowEvent::Focused(focused) if !focused => {
-                HidePopoverEvent.emit(window.app_handle()).unwrap();
-            }
-            _ => (),
-        },
-        _ => (),
+        }
     }
 }

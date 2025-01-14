@@ -6,7 +6,7 @@ const rawData = usePowerRaw()
 </script>
 
 <template>
-  <template v-if="!power.isLoading">
+  <div v-if="!power.isLoading">
     {{ power.isCharging ? power.adapterName : $t('status.on_battery') }}
     <template v-if="!rawData.isLocal && rawData.offline">
       <span>·</span>
@@ -16,6 +16,6 @@ const rawData = usePowerRaw()
       <span>·</span>
       {{ power.isRemote ? formatUpdateTime(power.lastUpdate * 1000) : '' }}
     </template>
-  </template>
+  </div>
   <Skeleton v-else class="w-20 h-[10px]" />
 </template>

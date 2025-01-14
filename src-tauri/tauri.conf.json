@@ -21,7 +21,7 @@
       {
         "label": "popover",
         "url": "popover.html",
-        "width": 398,
+        "width": 352,
         "height": 224,
         "titleBarStyle": "Transparent",
         "hiddenTitle": true,
@@ -30,7 +30,6 @@
         "resizable": false,
         "visible": false,
         "transparent": true,
-        "skipTaskbar": true,
         "focus": false
       },
       {

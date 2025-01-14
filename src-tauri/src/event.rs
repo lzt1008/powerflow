@@ -44,6 +44,3 @@ pub struct PowerUpdatedEvent(pub String);
 
 #[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
 pub struct WindowLoadedEvent;
-
-#[derive(Serialize, Deserialize, Debug, Clone, Event, Type)]
-pub struct HidePopoverEvent;

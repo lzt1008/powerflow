@@ -5,13 +5,10 @@ use tauri::{
     tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
     ActivationPolicy, Manager, Runtime,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
+use tauri_plugin_nspopover::{AppExt, WindowExt as _};
 use tauri_specta::Event;
 
-use crate::{
-    event::{HidePopoverEvent, PowerUpdatedEvent},
-    ext::WebviewWindowExt,
-};
+use crate::{event::PowerUpdatedEvent, ext::WebviewWindowExt};
 
 pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
     let show = MenuItemBuilder::new("Show Window").build(app)?;
@@ -24,7 +21,7 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
         .build()
         .unwrap();
 
-    let tray_icon = TrayIconBuilder::new()
+    let tray_icon = TrayIconBuilder::with_id("main")
         .title("0 w")
         .menu_on_left_click(false)
         .menu(&menu)
@@ -62,18 +59,11 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
             ..
         } = event
         {
-            let (window, is_new) = tray_handle
-                .app_handle()
-                .get_or_create_window("popover")
-                .unwrap();
-
-            if window.is_visible().unwrap() && !is_new {
-                // let js side handle this, so we can have fade animation
-                HidePopoverEvent.emit(tray_handle.app_handle()).unwrap();
+            let handle = tray_handle.app_handle();
+            if handle.is_popover_shown() {
+                handle.hide_popover();
             } else {
-                window.move_window(Position::TrayLeft).unwrap();
-                window.show().unwrap();
-                window.set_focus().unwrap();
+                handle.show_popover();
             }
         }
     });
@@ -81,6 +71,8 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
     PowerUpdatedEvent::listen(app.app_handle(), move |event| {
         tray_icon.set_title(Some(event.payload.0)).unwrap();
     });
+
+    app.popover_window().unwrap().to_popover();
 
     Ok(())
 }
