@@ -1,9 +1,9 @@
-name: 'build'
+name: build
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - 'v*'
 
 jobs:
   build-macos:
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 21
-          cache: 'pnpm'
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install
@@ -41,8 +41,8 @@ jobs:
 
         with:
           tagName: v__VERSION__
-          releaseName: "Powerflow v__VERSION__"
-          releaseBody: "See the assets to download this version and install."
+          releaseName: Powerflow v__VERSION__
+          releaseBody: See the assets to download this version and install.
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }}
