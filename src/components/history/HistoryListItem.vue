@@ -25,7 +25,7 @@ defineProps<ChargingHistory>()
                 end: timestamp * 1000 + chargingTime * 1000,
               }), {
                 locale: shortEnDistanceLocale,
-                format: ['hours', 'minutes'] 
+                format: ['hours', 'minutes'],
               }) }}
           </div>
         </span>

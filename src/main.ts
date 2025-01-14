@@ -16,7 +16,7 @@ const router = createRouter({
     {
       path: '/history/:id',
       component: () => import('./components/history/HistoryDetail.vue'),
-    }
+    },
   ],
 })
 
