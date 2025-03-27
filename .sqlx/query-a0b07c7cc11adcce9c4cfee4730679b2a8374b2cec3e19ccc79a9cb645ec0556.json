@@ -1,6 +1,6 @@
 {
   "db_name": "SQLite",
-  "query": "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote, adapter_name FROM charging_histories",
+  "query": "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote, adapter_name FROM charging_histories ORDER BY timestamp DESC",
   "describe": {
     "columns": [
       {
@@ -64,5 +64,5 @@
       false
     ]
   },
-  "hash": "73ecd25177eb15025e60f839d8ebfd2af019ea472462269fef4f484348b5dc76"
+  "hash": "a0b07c7cc11adcce9c4cfee4730679b2a8374b2cec3e19ccc79a9cb645ec0556"
 }

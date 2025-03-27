@@ -36,7 +36,7 @@ pub async fn get_all_charging_history(
 ) -> Result<Vec<ChargingHistory>, sqlx::Error> {
     query_as!(
         ChargingHistory,
-        "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote, adapter_name FROM charging_histories"
+        "SELECT id, from_level, end_level, charging_time, timestamp, name, udid, is_remote, adapter_name FROM charging_histories ORDER BY timestamp DESC"
     )
     .fetch_all(conn)
     .await
