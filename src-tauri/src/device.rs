@@ -2,7 +2,7 @@ use std::{
     collections::{HashMap, HashSet},
     ffi::c_void,
     mem::{self, MaybeUninit},
-    sync::RwLock,
+    sync::{Arc, RwLock},
     time::Duration,
 };
 
@@ -43,9 +43,11 @@ pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
     let (tx, rx) = mpsc::channel::<DeviceMessage>(10);
 
     extern "C" fn callback(info: *const AMDeviceNotificationCallbackInfo, context: *mut c_void) {
-        let tx = unsafe { Box::from_raw(context as *mut mpsc::Sender<DeviceMessage>) };
+        let tx = unsafe { &*(context as *mut mpsc::Sender<DeviceMessage>) };
         let info = unsafe { *info };
         let device = unsafe { Device::new(info.device) };
+
+        let tx = tx.clone();
 
         async_runtime::spawn(async move {
             tx.send(DeviceMessage {
@@ -59,14 +61,14 @@ pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
     }
 
     spawn_blocking(move || {
-        let boxed = Box::new(tx);
+        let boxed = Arc::new(tx);
         let mut not = MaybeUninit::uninit();
         unsafe {
             AMDeviceNotificationSubscribe(
                 callback,
                 0,
                 0,
-                Box::into_raw(boxed) as *mut _,
+                Arc::as_ptr(&boxed) as *mut _,
                 not.as_mut_ptr(),
             )
         };
