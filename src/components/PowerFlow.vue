@@ -64,12 +64,11 @@ const power = usePower()
         </FlowItem>
 
         <CommonTooltip
-          v-if="power.isCharging && power.efficiencyLoss !== 0"
+          v-if="power.isCharging"
           :content="`${$t('flow.power_loss')}: ${power.efficiencyLoss}mw`"
           as-child
         >
           <Shimmer
-            v-if="power.isCharging"
             :repeat-delay="1500"
             class="rounded-full mx-2 w-full
           [--base-color:theme(colors.green.500)]
