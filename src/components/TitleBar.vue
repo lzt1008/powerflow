@@ -16,7 +16,7 @@ const {
 <template>
   <div
     data-tauri-drag-region
-    class="sticky top-0 flex justify-between items-center z-10 py-2 pr-4 transition-shadow bg-background"
+    class="sticky top-0 flex justify-between items-center z-10 pt-2 pr-4 transition-shadow bg-background"
     :class="{ shadow: shouldDisplayShadow }"
   >
     <div class="ml-[6rem] flex items-center gap-2">
