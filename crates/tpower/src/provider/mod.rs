@@ -39,6 +39,8 @@ pub struct NormalizedResource {
     pub cycle_count: i32,
     pub current_capacity: i32,
     pub max_capacity: i32,
+    #[serde(default)]
+    pub design_capacity: i32,
     #[serde(flatten)]
     pub data: NormalizedData,
 }
@@ -144,6 +146,7 @@ impl From<&IORegistry> for NormalizedResource {
                 .or_else(|| io.adapter_details.description.clone()),
             cycle_count: io.cycle_count,
             max_capacity: io.apple_raw_max_capacity,
+            design_capacity: io.design_capacity,
             current_capacity: io.apple_raw_current_capacity,
             data: NormalizedData {
                 system_in,
@@ -188,6 +191,7 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                 .or_else(|| io.adapter_details.description.clone()),
             cycle_count: io.cycle_count,
             max_capacity: io.apple_raw_max_capacity,
+            design_capacity: io.design_capacity,
             current_capacity: io.apple_raw_current_capacity,
             data: NormalizedData {
                 system_in: smc.delivery_rate,
