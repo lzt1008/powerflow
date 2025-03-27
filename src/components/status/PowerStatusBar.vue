@@ -105,7 +105,7 @@ watchEffect(() => {
       <div
         class="absolute top-0 bottom-0 transition-all duration-500"
         :class="[hovered && hovered !== key ? 'opacity-20' : 'opacity-100', color]"
-        :style="{ width: `${(value / data.sum) * 100}%`, left: `${left * 100}%` }"
+        :style="{ width: `calc(${(value / data.sum) * 100}% + 1px)`, left: `${left * 100}%` }"
         @mouseover="hovered = key"
       />
     </CommonTooltip>
