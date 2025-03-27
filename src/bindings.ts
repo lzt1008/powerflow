@@ -56,7 +56,6 @@ export const events = __makeEvents__<{
 deviceEvent: DeviceEvent,
 devicePowerTickEvent: DevicePowerTickEvent,
 historyRecordedEvent: HistoryRecordedEvent,
-popoverEvent: PopoverEvent,
 powerTickEvent: PowerTickEvent,
 powerUpdatedEvent: PowerUpdatedEvent,
 preferenceEvent: PreferenceEvent,
@@ -65,7 +64,6 @@ windowLoadedEvent: WindowLoadedEvent
 deviceEvent: "device-event",
 devicePowerTickEvent: "device-power-tick-event",
 historyRecordedEvent: "history-recorded-event",
-popoverEvent: "popover-event",
 powerTickEvent: "power-tick-event",
 powerUpdatedEvent: "power-updated-event",
 preferenceEvent: "preference-event",
@@ -123,8 +121,7 @@ brightnessPower: number;
 /**
  * 0 if not available
  */
-heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null; cycleCount: number; currentCapacity: number; maxCapacity: number }
-export type PopoverEvent = "show" | "hide"
+heatpipePower: number; batteryLevel: number; absoluteBatteryLevel: number; temperature: number; adapterWatts: number; adapterVoltage: number; adapterAmperage: number }) & { isLocal: boolean; isCharging: boolean; timeRemain: Duration; lastUpdate: number; adapterName: string | null; cycleCount: number; currentCapacity: number; maxCapacity: number; designCapacity?: number }
 export type PowerTickEvent = { data: NormalizedResource }
 export type PowerUpdatedEvent = string
 export type PreferenceEvent = { theme: Theme } | { animationsEnabled: boolean } | { updateInterval: number } | { language: string } | { statusBarItem: StatusBarItem } | { statusBarShowCharging: boolean }
