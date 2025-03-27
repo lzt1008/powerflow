@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { localeMap } from '@/lib/format'
-import { addSeconds, formatDistanceToNow } from 'date-fns'
+import { formatChargingDuration } from '@/lib/format'
 import { BatteryCharging, BatteryFull, BatteryLow, BatteryMedium } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const power = usePower()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -32,12 +33,7 @@ const power = usePower()
       >
         <span v-if="power.isCharging && power.batteryLevel === 100">{{ $t('status.fully_charged') }}</span>
         <template v-else>
-          <span class="font-semibold mr-1">{{
-            formatDistanceToNow(
-              addSeconds(new Date(), power.timeRemain.secs),
-              { locale: localeMap[$i18n.locale as 'en' | 'zh-CN'] },
-            )
-          }}</span>
+          <span class="font-semibold mr-1">{{ formatChargingDuration(power.timeRemain.secs, t) }}</span>
           <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>
         </template>
       </div>

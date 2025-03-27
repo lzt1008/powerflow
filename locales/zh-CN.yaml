@@ -63,3 +63,38 @@ settings:
   license: 许可证
   author: 作者
   version: 版本
+
+time:
+  minute: 分钟
+  hour: 小时
+
+time_ago_options:
+  day_future: 现在|明天|{n} 天后
+  day_past: 现在|昨天|{n} 天前
+  hour_future: 现在|1 小时后|{n} 小时后
+  hour_past: 现在|1 小时前|{n} 小时前
+  just_now: 刚刚
+  minute_future: 现在|1 分钟后|{n} 分钟后
+  minute_past: 现在|1 分钟前|{n} 分钟前
+  month_future: 现在|下个月|{n} 个月后
+  month_past: 现在|上个月|{n} 个月前
+  second_future: 刚刚|{n} 秒后|{n} 秒后
+  second_past: 刚刚|{n} 秒前|{n} 秒前
+  short_day_future: '{n} 天前'
+  short_day_past: '{n} 天前'
+  short_hour_future: '{n} 小时前'
+  short_hour_past: '{n} 小时前'
+  short_minute_future: '{n} 分钟前'
+  short_minute_past: '{n} 分钟前'
+  short_month_future: '{n} 个月前'
+  short_month_past: '{n} 个月前'
+  short_second_future: '{n} 秒前'
+  short_second_past: '{n} 秒前'
+  short_week_future: '{n} 周前'
+  short_week_past: '{n} 周前'
+  short_year_future: '{n} 年前'
+  short_year_past: '{n} 年前'
+  week_future: 现在|下周|{n} 周后
+  week_past: 现在|上周|{n} 周前
+  year_future: 现在|明年|{n} 年后
+  year_past: 现在|去年|{n} 年前

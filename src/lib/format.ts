@@ -1,6 +1,13 @@
 import type { ArgumentsType } from '@vueuse/core'
+import type { useI18n } from 'vue-i18n'
 import { type FormatDistanceToken, formatDistanceToNow, type Locale } from 'date-fns'
 import { enUS, zhCN } from 'date-fns/locale'
+
+export function formatChargingDuration(seconds: number, t: ReturnType<typeof useI18n>['t']) {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return hours > 0 ? `${hours}${t('time.hour')} ${minutes}${t('time.minute')}` : `${minutes}${t('time.minute')}`
+}
 
 export const localeMap = {
   'en': enUS,

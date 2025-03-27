@@ -1,8 +1,13 @@
 <script setup lang="ts">
-import { formatUpdateTime } from '@/lib/format'
+import { useTimeAgoOptions } from '@/lib/i18n'
 
 const power = usePower()
 const rawData = usePowerRaw()
+
+const timeAgoOptions = useTimeAgoOptions()
+
+const updateTime = computed(() => power.value.lastUpdate * 1000)
+const formatedUpdatetime = useTimeAgo(updateTime, timeAgoOptions)
 </script>
 
 <template>
@@ -14,7 +19,7 @@ const rawData = usePowerRaw()
     </template>
     <template v-else-if="!rawData.isLocal">
       <span>·</span>
-      {{ power.isRemote ? formatUpdateTime(power.lastUpdate * 1000) : '' }}
+      {{ power.isRemote ? formatedUpdatetime : '' }}
     </template>
   </div>
   <Skeleton v-else class="w-20 h-[10px]" />
