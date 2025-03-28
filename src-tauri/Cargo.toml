@@ -1,6 +1,6 @@
 [package]
 name = "powerflow"
-version = "0.1.0"
+version = "0.2.0"
 description = "Monitoring power usage of mac and iOS devices"
 authors = [ "Samuel Lyon" ]
 edition = "2021"
