@@ -20,8 +20,14 @@ const formatedUpdatetime = useTimeAgo(timestamp * 1000 + chargingTime * 1000, ti
         <LaptopIcon v-else class="size-5" />
       </div>
       <div class="flex flex-col ml-4">
-        <span class="flex items-baseline gap-2 relative">
-          <span class="flex items-center gap-1 font-medium">{{ fromLevel }}% <ChevronRight class="size-4" /> {{ endLevel }}%</span>
+        <span class="flex gap-2 relative font-mono items-baseline">
+          <span class="flex font-semibold items-baseline">
+            {{ fromLevel }}
+            <span class="text-xs ml-[2px]">%</span>
+            <ChevronRight class="size-4 mx-1 self-center" />
+            {{ endLevel }}
+            <span class="text-xs ml-[2px]">%</span>
+          </span>
           <div class="text-muted-foreground font-mono text-xs truncate">
             {{ formatChargingDuration(chargingTime, t) }}
           </div>
