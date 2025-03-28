@@ -8,4 +8,5 @@ export default defineConfig({
     'crates/tpower/Cargo.toml',
   ],
   sign: true,
+  push: false,
 })
