@@ -27,7 +27,7 @@ const buttonText = computed(() => {
       v-if="power.isRemote"
       class="mr-1 size-2 rounded-full"
       :class="{
-        'bg-green-500 animate-pulse': !rawData.isLocal && !rawData.offline,
+        'bg-blue-500 animate-pulse': !rawData.isLocal && !rawData.offline,
         'bg-neutral-500': !rawData.isLocal && rawData.offline,
       }"
     />
@@ -36,7 +36,9 @@ const buttonText = computed(() => {
   <Skeleton v-if="power.isLoading" class="w-24 h-6" />
   <div
     v-else-if="power.isCharging"
-    class="rounded-md dark:bg-green-600 bg-green-500 px-2 py-1 text-xs truncate font-mono"
+    class="rounded-md
+    bg-gradient-to-r from-blue-500 to-blue-600
+    px-2 py-1 text-xs truncate font-mono"
   >
     <span class="font-bold mr-1 text-background">{{ power.adapterWatts }}W</span>
     <span class="text-[10px] text-background/80">({{ power.adapterVoltage }}V,{{
@@ -44,8 +46,8 @@ const buttonText = computed(() => {
   </div>
   <div
     v-else
-    class="rounded-md dark:bg-green-600 bg-green-500 px-2 py-1 text-xs truncate font-mono w-20 text-background flex items-center justify-center
-            cursor-pointer hover:bg-green-600 transition-colors
+    class="rounded-md dark:bg-blue-600 bg-blue-00 px-2 py-1 text-xs truncate font-mono w-20 text-background flex items-center justify-center
+            cursor-pointer hover:bg-blue-600 transition-colors
             "
     @click.stop="showRemainDuration = !showRemainDuration"
   >

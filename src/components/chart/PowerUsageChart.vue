@@ -57,6 +57,7 @@ watch([localeMap, () => power.value.isCharging], async () => {
         :data="localedData"
         :categories="localedCategories"
         :custom-tooltip="CustomChartTooltip"
+        :colors="['#2563eb', '#60a5fa', '#818cf8', '#0891b2']"
       />
     </CardContent>
   </Card>

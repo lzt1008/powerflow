@@ -15,7 +15,7 @@ interface FlowItemProps {
 
 const colorMap = {
   'text-yellow-500': 'text-yellow-950 dark:text-yellow-50 hover:bg-yellow-500/5 hover:border-yellow-500/20',
-  'text-green-500': 'text-green-950 dark:text-green-50 hover:bg-green-500/5 hover:border-green-500/20',
+  'text-blue-500': 'text-blue-950 dark:text-blue-50 hover:bg-blue-500/5 hover:border-blue-500/20',
   'text-blue-500': 'text-blue-950 dark:text-blue-50 hover:bg-blue-500/5 hover:border-blue-500/20',
   'text-cyan-500': 'text-cyan-950 dark:text-cyan-50 hover:bg-cyan-500/5 hover:border-cyan-500/20',
   'text-indigo-500': 'text-indigo-950 dark:text-indigo-50 hover:bg-indigo-500/5 hover:border-indigo-500/20',
@@ -71,10 +71,10 @@ const power = usePower()
           <Shimmer
             :repeat-delay="1500"
             class="rounded-full mx-2 w-full
-          [--base-color:theme(colors.green.500)]
-          [--base-gradient-color:theme(colors.green.300)]
-          dark:[--base-color:theme(colors.green.700)]
-          dark:[--base-gradient-color:theme(colors.green.400)]"
+          [--base-color:theme(colors.blue.500)]
+          [--base-gradient-color:theme(colors.blue.300)]
+          dark:[--base-color:theme(colors.blue.700)]
+          dark:[--base-gradient-color:theme(colors.blue.400)]"
           >
             <div class="h-1 cursor-pointer" />
           </Shimmer>
@@ -104,15 +104,15 @@ const power = usePower()
           :delay="2000"
           :repeat-delay="1500"
           class="rounded-full mx-2 w-full
-          [--base-color:theme(colors.green.500)]
-          [--base-gradient-color:theme(colors.green.300)]
-          dark:[--base-color:theme(colors.green.700)]
-          dark:[--base-gradient-color:theme(colors.green.400)]"
+          [--base-color:theme(colors.blue.500)]
+          [--base-gradient-color:theme(colors.blue.300)]
+          dark:[--base-color:theme(colors.blue.700)]
+          dark:[--base-gradient-color:theme(colors.blue.400)]"
         >
           <div class="h-1 cursor-pointer" />
         </Shimmer>
 
-        <FlowItem :tooltip="power.isCharging ? $t('flow.battery_in') : $t('flow.battery_out')" :icon="Battery" color="text-green-500">
+        <FlowItem :tooltip="power.isCharging ? $t('flow.battery_in') : $t('flow.battery_out')" :icon="Battery" color="text-blue-500">
           {{ formatter.format(power.batteryPower) }}
         </FlowItem>
       </div>

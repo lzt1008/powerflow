@@ -6,12 +6,12 @@ const power = usePower()
 const { t } = useI18n()
 
 const colors = [
-  // 'bg-green-500',
-  'bg-green-600',
-  'bg-green-700',
-  'bg-green-800',
-  'bg-green-900',
-  'bg-green-950',
+  'bg-blue-500',
+  'bg-blue-600',
+  'bg-blue-700',
+  'bg-blue-800',
+  'bg-blue-900',
+  'bg-blue-950',
 ]
 
 const localeMap = computed(() => ({
@@ -90,7 +90,7 @@ watchEffect(() => {
   <div
     v-if="data"
     class="relative h-3 overflow-hidden rounded flex transition-all duration-500"
-    :class="[hovered ? '' : 'bg-green-500']"
+    :class="[hovered ? '' : 'bg-blue-500']"
     @mouseleave="hovered = null"
   >
     <CommonTooltip

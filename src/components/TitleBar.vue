@@ -38,7 +38,7 @@ const {
             leave-active-class="duration-500"
           >
             <TabsTrigger key="local" class="px-0" value="local">
-              <LaptopIcon class="mx-3 size-4" :class="[tab === 'local' ? 'text-green-500' : 'text-muted-foreground']" />
+              <LaptopIcon class="mx-3 size-4" :class="[tab === 'local' ? 'text-blue-500' : 'text-muted-foreground']" />
             </TabsTrigger>
 
             <TabsTrigger
@@ -47,13 +47,13 @@ const {
               class="px-0"
               :value="udid"
             >
-              <MobileIcon class="mx-3 size-4" :class="[tab === udid ? 'text-green-500' : 'text-muted-foreground']" />
+              <MobileIcon class="mx-3 size-4" :class="[tab === udid ? 'text-blue-500' : 'text-muted-foreground']" />
             </TabsTrigger>
           </TransitionGroup>
         </TabsList>
         <div class="flex flex-col -translate-y-[1px]">
           <Skeleton v-if="tabNameLoading" class="w-32 h-4" />
-          <span v-else class="text-secondary-foreground font-bold">{{ tabName }}</span>
+          <span v-else class="text-secondary-foreground font-bold">{{ 'Lyon\'s MacBook Pro' }}</span>
           <span class="text-[10px] leading-[10px] font-normal text-muted-foreground">
             {{ tab === 'local' ? 'Local' : Array.from(data.remote[tab].interface || []).join(' and ') || 'offline' }}
           </span>
