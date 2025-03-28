@@ -6,7 +6,7 @@ import { enUS, zhCN } from 'date-fns/locale'
 export function formatChargingDuration(seconds: number, t: ReturnType<typeof useI18n>['t']) {
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
-  return hours > 0 ? `${hours}${t('time.hour')} ${minutes}${t('time.minute')}` : `${minutes}${t('time.minute')}`
+  return hours > 0 ? `${hours}${t('time.hour', hours)} ${minutes}${t('time.minute', minutes)}` : `${minutes}${t('time.minute', minutes)}`
 }
 
 export const localeMap = {

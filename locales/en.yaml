@@ -69,8 +69,8 @@ settings:
   author: Author
 
 time:
-  minute: minute
-  hour: hour
+  minute: minute|minute|minutes
+  hour: minute|hour|hours
 
 time_ago_options:
   day_future: in 0 days|tomorrow|in {n} days
