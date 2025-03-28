@@ -16,7 +16,6 @@ interface FlowItemProps {
 const colorMap = {
   'text-yellow-500': 'text-yellow-950 dark:text-yellow-50 hover:bg-yellow-500/5 hover:border-yellow-500/20',
   'text-blue-500': 'text-blue-950 dark:text-blue-50 hover:bg-blue-500/5 hover:border-blue-500/20',
-  'text-blue-500': 'text-blue-950 dark:text-blue-50 hover:bg-blue-500/5 hover:border-blue-500/20',
   'text-cyan-500': 'text-cyan-950 dark:text-cyan-50 hover:bg-cyan-500/5 hover:border-cyan-500/20',
   'text-indigo-500': 'text-indigo-950 dark:text-indigo-50 hover:bg-indigo-500/5 hover:border-indigo-500/20',
 }
