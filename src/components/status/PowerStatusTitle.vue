@@ -46,7 +46,7 @@ const buttonText = computed(() => {
   </div>
   <div
     v-else
-    class="rounded-md dark:bg-blue-600 bg-blue-00 px-2 py-1 text-xs truncate font-mono w-20 text-background flex items-center justify-center
+    class="rounded-md dark:bg-blue-600 bg-blue-600 px-2 py-1 text-xs truncate font-mono w-20 text-background flex items-center justify-center
             cursor-pointer hover:bg-blue-600 transition-colors
             "
     @click.stop="showRemainDuration = !showRemainDuration"
