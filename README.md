@@ -1,8 +1,8 @@
-# PowerFlow
+# Powerflow
 
-![PowerFlow Screenshot](https://raw.githubusercontent.com/lzt1008/powerflow/assets/screenshot.png)
+![Powerflow Screenshot](https://raw.githubusercontent.com/lzt1008/powerflow/assets/screenshot.png)
 
-PowerFlow is a macOS application designed to monitor the **power usage** and **charging status** of your devices. With PowerFlow, you can gain insights into your device's power consumption.
+Powerflow is a macOS application designed to monitor the **power usage** and **charging status** of your devices. With Powerflow, you can gain insights into your device's power consumption.
 
 ## Features
 
@@ -14,13 +14,23 @@ PowerFlow is a macOS application designed to monitor the **power usage** and **c
 
 ## Installation
 
+### Manual Installation
 1. Download the latest `.dmg` file from the [Releases](https://github.com/lzt1008/powerflow/releases) page.
-2. Open the `.dmg` file and drag the PowerFlow app to your Applications folder.
+2. Open the `.dmg` file and drag the Powerflow app to your Applications folder.
 3. If you encounter an error, try the following steps:
 - Open **System Preferences** > **Security & Privacy**.
-- In the **General** tab, you will see a message about PowerFlow being blocked.
+- In the **General** tab, you will see a message about Powerflow being blocked.
 - Click **"Open Anyway"**.
 - Confirm the dialog that appears by clicking **"Open"**.
+
+### Install via Homebrew
+
+Open your terminal and run the following command:
+
+```bash
+brew tap lzt1008/powerflow
+brew install --cask powerflow
+```
 
 ## Contributing
 
@@ -33,10 +43,10 @@ We welcome contributions! Here's how you can help:
 
 ## License
 
-PowerFlow is released under the [MIT License](https://github.com/lzt1008/powerflow/blob/main/LICENSE). Feel free to use, modify, and distribute this software as per the license terms.
+Powerflow is released under the [MIT License](https://github.com/lzt1008/powerflow/blob/main/LICENSE). Feel free to use, modify, and distribute this software as per the license terms.
 
 ## Feedback and Support
 
 We'd love to hear from you! If you have any feedback, issues, or suggestions, please [open an issue](https://github.com/lzt1008/powerflow/issues) on GitHub
 
-Thank you for using PowerFlow! 🚀
+Thank you for using Powerflow! 🚀
