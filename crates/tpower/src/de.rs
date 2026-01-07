@@ -69,7 +69,7 @@ with_repr! {
     }
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"), default)]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct IORegistry {
         pub adapter_details: AdapterDetails,
