@@ -123,6 +123,7 @@ impl From<&IORegistry> for NormalizedResource {
     fn from(io: &IORegistry) -> Self {
         let (system_in, system_load, battery_power, adapter_power, efficiency_loss) =
             if let Some(d) = io.ptd() {
+                // macOS: use PowerTelemetryData
                 (
                     d.system_power_in as f32 / 1000.,
                     d.system_load as f32 / 1000.,
@@ -131,7 +132,25 @@ impl From<&IORegistry> for NormalizedResource {
                     d.adapter_efficiency_loss as f32 / 1000.,
                 )
             } else {
-                Default::default()
+                // iOS/iPadOS: calculate from InstantAmperage × Voltage
+                // InstantAmperage is in mA, Voltage is in mV
+                // Power (W) = mA × mV / 1,000,000
+                let battery_power =
+                    (io.instant_amperage.abs() as f32 * io.voltage as f32) / 1_000_000.0;
+
+                // When charging, adapter provides power to both system and battery
+                // Estimate system_in from adapter details if available
+                let adapter_watts = io.adapter_details.watts.unwrap_or(0) as f32;
+                let system_in = if io.is_charging { adapter_watts.max(battery_power) } else { 0.0 };
+                let system_load = if io.is_charging {
+                    // When charging: system load ≈ adapter input - battery charging power
+                    (system_in - battery_power).max(0.0)
+                } else {
+                    // When discharging: system load ≈ battery power output
+                    battery_power
+                };
+
+                (system_in, system_load, battery_power, system_in, 0.0)
             };
 
         Self {
