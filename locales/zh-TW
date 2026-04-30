@@ -1,0 +1,100 @@
+system_power: 系統用電量
+power_flow: 用電狀態
+on_battery: 使用電池
+power_usage: 電池使用狀況
+temperature: 溫度
+temperature_desc: 電池溫度
+battery_health: 電池健康度
+battery_health_desc: 電池健康狀態
+cycle_count: 循環次數
+cycle_count_desc: 總循環次數
+energy: 能量
+designed_capacity: 設計容量
+times: 次
+status:
+  charging_power: 供電功率
+  offline: 離線
+  on_battery: 電池供電
+  system_power: 系統用電量
+  to_full: 已充滿
+  to_empty: 電量耗盡
+  fully_charged: 完全充滿
+  battery_in: 使用電池
+  power_loss: 耗損
+  screen_power: 螢幕
+  heatpipe_power: SoC
+  system_total: 整體
+  system_other: 其它
+flow:
+  screen_power: 螢幕功率
+  heatpipe_power: SoC功率
+  system_total: 系統總功率
+  system_in: 系統输入
+  battery_in: 電池輸入功率
+  battery_out: 電池輸出功率
+  power_loss: 耗損
+  adapter_power: 電源供應器輸入功率
+settings:
+  appearance: 外觀
+  theme: 主題
+  theme_desc: 更改 App 外關
+  theme_light: 淺色
+  theme_dark: 深色
+  theme_system: 系統
+  language: 語言
+  language_desc: 設置 App 的語言
+  auto: 自動
+  animations: 動畫
+  animations_desc: 功率變化動畫平滑效果
+  update_and_monitoring: 更新與監控
+  update_frequency: 更新週期
+  update_frequency_desc: 電率數據刷新率
+  background_monitoring: 後台運行
+  background_monitoring_desc: 在後台運行 App
+  status_bar: 選單列
+  status_bar_desc: 選單列中顯示的訊息
+  heatpipe_power: SoC功耗
+  screen_power: 螢幕功耗
+  system_total: 系統總功耗
+  show_charging_power: 顯示充電功率
+  show_charging_power_desc: 充電時改顯示充電功率
+  about: 關於
+  build: 構建
+  license: 許可協議
+  author: 作者
+  version: 版本
+
+time:
+  minute: 分鐘
+  hour: 小時
+
+time_ago_options:
+  day_future: 現在|明天|{n} 天後
+  day_past: 現在|昨天|{n} 天前
+  hour_future: 現在|1 小時後|{n} 小時後
+  hour_past: 現在|1 小時前|{n} 小時前
+  just_now: 剛剛
+  minute_future: 現在|1 分鐘後|{n} 分鐘後
+  minute_past: 現在|1 分鐘前|{n} 分鐘前
+  month_future: 現在|下個月|{n} 個月後
+  month_past: 現在|上個月|{n} 個月前
+  second_future: 剛剛|{n} 秒後|{n} 秒後
+  second_past: 剛剛|{n} 秒前|{n} 秒前
+  short_day_future: '{n} 天前'
+  short_day_past: '{n} 天前'
+  short_hour_future: '{n} 小時前'
+  short_hour_past: '{n} 小時前'
+  short_minute_future: '{n} 分鐘前'
+  short_minute_past: '{n} 分鐘前'
+  short_month_future: '{n} 個月前'
+  short_month_past: '{n} 個月前'
+  short_second_future: '{n} 秒前'
+  short_second_past: '{n} 秒前'
+  short_week_future: '{n} 週前'
+  short_week_past: '{n} 週前'
+  short_year_future: '{n} 年前'
+  short_year_past: '{n} 年前'
+  week_future: 現在|下週|{n} 週後
+  week_past: 現在|上週|{n} 週前
+  year_future: 現在|明年|{n} 年後
+  year_past: 現在|去年|{n} 年前
