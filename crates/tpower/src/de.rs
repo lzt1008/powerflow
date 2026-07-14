@@ -43,7 +43,7 @@ with_repr! {
     }
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(default, rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct AdapterDetails {
         pub adapter_voltage: Option<i32>,
@@ -56,7 +56,7 @@ with_repr! {
 
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(default, rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct PowerTelemetryData {
         pub adapter_efficiency_loss: i32,
@@ -68,8 +68,10 @@ with_repr! {
         pub system_voltage_in: i32,
     }
 
+    // `serde(default)` keeps parsing resilient when macOS adds/removes IORegistry keys
+    // (e.g. macOS 27 schema drift) instead of hard-failing the whole payload.
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(default, rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct IORegistry {
         pub adapter_details: AdapterDetails,
