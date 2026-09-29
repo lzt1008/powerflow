@@ -14,11 +14,12 @@ use objc2_app_kit::{
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use sqlx::{Pool, Sqlite};
-use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, State, Window, WindowEvent};
+use tauri::{ActivationPolicy, AppHandle, Manager, RunEvent, Runtime, State, Window, WindowEvent};
+use tauri_plugin_pinia::ManagerExt;
 use tauri_specta::{collect_commands, collect_events};
 use tpower::ffi::InterfaceType;
 use tray_icon::setup_tray_icon;
-use util::setup_traffic_light_positioner;
+use util::{log_err, setup_traffic_light_positioner};
 
 mod database;
 pub mod device;
@@ -33,20 +34,46 @@ mod util;
 #[tauri::command]
 #[specta::specta]
 fn open_app(app: AppHandle) {
-    let main = app.main_window().unwrap();
-    main.show().unwrap();
-    main.set_focus().unwrap();
-    app.set_activation_policy(ActivationPolicy::Regular)
-        .unwrap();
-    app.popover_window().unwrap().hide().unwrap();
+    show_main_window(&app);
+    if let Some(popover) = app.popover_window() {
+        log_err(popover.hide(), "hide popover");
+    }
+}
+
+pub(crate) fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(main) = app.main_window() {
+        log_err(main.show(), "show main window");
+        log_err(main.set_focus(), "focus main window");
+    }
+    log_err(
+        app.set_activation_policy(ActivationPolicy::Regular),
+        "set activation policy",
+    );
+}
+
+/// Hide the main window and drop the Dock icon; the app keeps running in the
+/// menu bar.
+fn hide_main_window<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(main) = app.main_window() {
+        log_err(main.hide(), "hide main window");
+    }
+    log_err(
+        app.set_activation_policy(ActivationPolicy::Accessory),
+        "set activation policy",
+    );
 }
 
 #[tauri::command]
 #[specta::specta]
 fn open_settings(app: AppHandle) {
-    let settings = app.settings_window().unwrap();
-    settings.show().unwrap();
-    settings.set_focus().unwrap();
+    open_settings_window(&app);
+}
+
+pub(crate) fn open_settings_window<R: Runtime>(app: &AppHandle<R>) {
+    if let Some(settings) = app.settings_window() {
+        log_err(settings.show(), "show settings window");
+        log_err(settings.set_focus(), "focus settings window");
+    }
 }
 
 #[tauri::command]
@@ -63,9 +90,7 @@ fn get_device_name(
     id: String,
     state: State<DeviceState>,
 ) -> Option<(String, HashSet<InterfaceType>)> {
-    let state = state.read().unwrap();
-    let data = state.get(&id);
-    data.cloned()
+    state.read().ok()?.get(&id).cloned()
 }
 
 #[tauri::command]
@@ -82,11 +107,16 @@ fn switch_theme(theme: Theme, app: AppHandle) {
         Theme::Dark => NSAppearance::appearanceNamed(unsafe { NSAppearanceNameVibrantDark }),
         Theme::System => None,
     };
-    app.webview_windows().values().for_each(|w| unsafe {
-        if let Some(w) = (w.ns_window().unwrap() as *mut NSWindow).as_ref() {
-            w.setAppearance(apprence.as_deref())
-        }
-    });
+    app.webview_windows()
+        .values()
+        .for_each(|w| match w.ns_window() {
+            Ok(ns_window) => unsafe {
+                if let Some(w) = (ns_window as *mut NSWindow).as_ref() {
+                    w.setAppearance(apprence.as_deref())
+                }
+            },
+            Err(e) => log::warn!("failed to apply window theme: {e}"),
+        });
 }
 
 #[tauri::command]
@@ -179,7 +209,7 @@ pub fn run() {
         .setup(move |app| {
             specta.mount_events(app);
 
-            setup_database(app.handle().clone());
+            setup_database(app.handle().clone())?;
 
             setup_tray_icon(app)?;
             setup_sender_with_events(app);
@@ -187,7 +217,22 @@ pub fn run() {
             setup_device_listener(app.app_handle().clone());
             setup_history_recorder(app.app_handle().clone());
 
-            setup_traffic_light_positioner(app.main_window().unwrap());
+            if let Some(main) = app.main_window() {
+                setup_traffic_light_positioner(main);
+            }
+
+            // The main window starts hidden (see tauri.conf.json) so it can
+            // stay in the background when "hide on startup" is enabled.
+            let hide_on_startup = app
+                .app_handle()
+                .pinia()
+                .try_get::<bool>("preference", "hideOnStartup")
+                .unwrap_or(false);
+            if hide_on_startup {
+                hide_main_window(app.app_handle());
+            } else {
+                show_main_window(app.app_handle());
+            }
 
             Ok(())
         })
@@ -202,11 +247,7 @@ pub fn run() {
         RunEvent::Reopen {
             has_visible_windows,
             ..
-        } if !has_visible_windows => {
-            app.main_window().unwrap().show().unwrap();
-            app.set_activation_policy(ActivationPolicy::Regular)
-                .unwrap();
-        }
+        } if !has_visible_windows => show_main_window(app),
         _ => (),
     });
 }
@@ -217,11 +258,7 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
             WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
 
-                window.hide().unwrap();
-                window
-                    .app_handle()
-                    .set_activation_policy(ActivationPolicy::Accessory)
-                    .unwrap();
+                hide_main_window(window.app_handle());
             }
             WindowEvent::ThemeChanged(theme) => {
                 println!("Theme changed to: {}", theme);

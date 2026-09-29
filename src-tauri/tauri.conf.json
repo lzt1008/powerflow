@@ -16,7 +16,8 @@
         "title": "",
         "width": 1000,
         "height": 600,
-        "titleBarStyle": "Overlay"
+        "titleBarStyle": "Overlay",
+        "visible": false
       },
       {
         "label": "popover",

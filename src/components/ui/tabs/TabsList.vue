@@ -40,6 +40,10 @@ function updateIndicator() {
 }
 
 onMounted(() => {
+  const el = t.value?.$el as HTMLDivElement | undefined
+  if (!el)
+    return
+
   const observer = new MutationObserver(async (mutations) => {
     for (const m of mutations) {
       if (m.type === 'attributes' && m.attributeName === 'data-state') {
@@ -50,13 +54,13 @@ onMounted(() => {
 
   updateIndicator()
 
-  observer.observe(t.value?.$el as HTMLDivElement, {
+  observer.observe(el, {
     childList: true,
     subtree: true,
     attributes: true,
   })
 
-  return () => observer.disconnect()
+  onUnmounted(() => observer.disconnect())
 })
 </script>
 

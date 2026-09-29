@@ -5,17 +5,33 @@ const data = usePowerData()
 const shouldDisplayShadow = ref(false)
 
 const tabNameLoading = ref(true)
+let requestId = 0
+
 const tabName = computedAsync(async () => {
-  if (tab.value === 'local') {
+  const id = ++requestId
+  const currTab = tab.value
+
+  if (currTab === 'local') {
     return commands.getMacName().then(name => name || 'Local')
   }
 
-  const currTab = tab.value as string
   const device = await commands.getDeviceName(currTab)
-  data.remote[currTab].name = device?.[0] || currTab
-  data.remote[currTab].interface = new Set(device?.[1] || [])
+  // Ignore stale responses from a previous tab switch.
+  if (id !== requestId || tab.value !== currTab)
+    return data.remote[currTab]?.name || currTab
 
-  return data.remote[currTab].name
+  const remote = data.remote[currTab]
+  if (!remote)
+    return device?.[0] || currTab
+
+  if (device) {
+    remote.name = device[0] || currTab
+    // Merge interfaces from DeviceState; never wipe ones maintained by deviceEvent.
+    for (const iface of device[1] || [])
+      remote.interface.add(iface)
+  }
+
+  return remote.name || currTab
 }, '', tabNameLoading)
 
 export function useTitlebar() {
