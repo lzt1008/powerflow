@@ -1,5 +1,3 @@
-use std::mem;
-
 use core_foundation::{base::TCFType, dictionary::CFDictionary};
 use thiserror::Error;
 
@@ -38,6 +36,5 @@ pub fn get_device_ioreg(conn: &ServiceConnection) -> Result<IORegistry, DeviceDa
 
     let data = dict_into::<repr::IORegistryDiagnostic>(response)?;
 
-    // SAFETY: IORegistry and repr::IORegistry are disigned to be the same
-    unsafe { mem::transmute(data.diagnostics.ioregistry) }
+    Ok(data.diagnostics.ioregistry.into())
 }

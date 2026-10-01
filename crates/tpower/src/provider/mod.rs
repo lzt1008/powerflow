@@ -20,7 +20,7 @@ use ratatui::widgets::SparklineBar;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    de::{repr, IORegistry},
+    de::{repr, AdapterDetails, IORegistry, PowerTelemetryData},
     ffi::{smc::SMCPowerData, InterfaceType},
     util::{dict_into, skip_until},
 };
@@ -157,9 +157,7 @@ impl From<&IORegistry> for NormalizedResource {
                 brightness_power: 0.,
                 heatpipe_power: 0.,
                 battery_level: io.current_capacity,
-                absolute_battery_level: io.apple_raw_current_capacity as f32
-                    / io.apple_raw_max_capacity as f32
-                    * 100.,
+                absolute_battery_level: io.absolute_battery_level(),
                 temperature: io.temperature as f32 / 100.,
 
                 adapter_watts: io.adapter_details.watts.unwrap_or_default() as f32,
@@ -203,9 +201,7 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                 brightness_power: smc.brightness,
                 heatpipe_power: smc.heatpipe,
                 battery_level: io.current_capacity,
-                absolute_battery_level: io.apple_raw_current_capacity as f32
-                    / io.apple_raw_max_capacity as f32
-                    * 100.,
+                absolute_battery_level: io.absolute_battery_level(),
                 temperature: smc.temperature,
                 adapter_power: smc.delivery_rate
                     + io.ptd()
@@ -240,9 +236,62 @@ pub fn get_mac_ioreg_dict() -> anyhow::Result<CFDictionary> {
     unsafe { Ok(CFDictionary::wrap_under_create_rule(properties)) }
 }
 
+impl From<repr::AdapterDetails> for AdapterDetails {
+    fn from(value: repr::AdapterDetails) -> Self {
+        Self {
+            adapter_voltage: value.adapter_voltage,
+            is_wireless: value.is_wireless,
+            watts: value.watts,
+            name: value.name,
+            current: value.current,
+            description: value.description,
+        }
+    }
+}
+
+impl From<repr::PowerTelemetryData> for PowerTelemetryData {
+    fn from(value: repr::PowerTelemetryData) -> Self {
+        Self {
+            adapter_efficiency_loss: value.adapter_efficiency_loss,
+            battery_power: value.battery_power,
+            system_current_in: value.system_current_in,
+            system_energy_consumed: value.system_energy_consumed,
+            system_load: value.system_load,
+            system_power_in: value.system_power_in,
+            system_voltage_in: value.system_voltage_in,
+        }
+    }
+}
+
+impl From<repr::IORegistry> for IORegistry {
+    fn from(value: repr::IORegistry) -> Self {
+        Self {
+            adapter_details: value.adapter_details.into(),
+            power_telemetry_data: value.power_telemetry_data.map(Into::into),
+            absolute_capacity: value.absolute_capacity,
+            amperage: value.amperage,
+            voltage: value.voltage,
+            apple_raw_battery_voltage: value.apple_raw_battery_voltage,
+            apple_raw_current_capacity: value.apple_raw_current_capacity,
+            apple_raw_max_capacity: value.apple_raw_max_capacity,
+            current_capacity: value.current_capacity,
+            cycle_count: value.cycle_count,
+            design_capacity: value.design_capacity,
+            fully_charged: value.fully_charged,
+            instant_amperage: value.instant_amperage,
+            is_charging: value.is_charging,
+            max_capacity: value.max_capacity,
+            temperature: value.temperature,
+            time_remaining: value.time_remaining,
+            update_time: value.update_time,
+        }
+    }
+}
+
 pub fn get_mac_ioreg() -> anyhow::Result<IORegistry> {
     let dic = get_mac_ioreg_dict()?;
-    unsafe { mem::transmute(dict_into::<repr::IORegistry>(dic)) }
+    let parsed: repr::IORegistry = dict_into(dic).map_err(anyhow::Error::from)?;
+    Ok(parsed.into())
 }
 
 #[derive(Debug)]
@@ -324,5 +373,104 @@ impl PowerStatistic {
         skip_until(self.system_history.iter(), width)
             .map(|v| SparklineBar::from(*v))
             .collect()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn repr_registry_converts_without_loss() {
+        let parsed = repr::IORegistry {
+            adapter_details: repr::AdapterDetails {
+                adapter_voltage: Some(20_000),
+                is_wireless: Some(false),
+                watts: Some(96),
+                name: Some("96W USB-C Power Adapter".to_string()),
+                current: Some(4_800),
+                description: Some("USB-C".to_string()),
+            },
+            power_telemetry_data: Some(repr::PowerTelemetryData {
+                adapter_efficiency_loss: 1500,
+                battery_power: -5_000,
+                system_current_in: 3_000,
+                system_energy_consumed: 123_456,
+                system_load: 12_000,
+                system_power_in: 15_000,
+                system_voltage_in: 20_000,
+            }),
+            absolute_capacity: 95,
+            amperage: -1_500,
+            voltage: 12_000,
+            apple_raw_battery_voltage: Some(12_345),
+            apple_raw_current_capacity: 8_500,
+            apple_raw_max_capacity: 8_900,
+            current_capacity: 95,
+            cycle_count: 42,
+            design_capacity: 9_000,
+            fully_charged: false,
+            instant_amperage: -1_500,
+            is_charging: true,
+            max_capacity: 95,
+            temperature: 3_100,
+            time_remaining: 120,
+            update_time: 1_719_999_999,
+        };
+
+        let converted = IORegistry::from(parsed);
+
+        assert_eq!(converted.adapter_details.watts, Some(96));
+        assert_eq!(
+            converted.adapter_details.name.as_deref(),
+            Some("96W USB-C Power Adapter")
+        );
+        assert_eq!(
+            converted.power_telemetry_data.map(|d| d.system_power_in),
+            Some(15_000)
+        );
+        assert_eq!(converted.apple_raw_current_capacity, 8_500);
+        assert_eq!(converted.cycle_count, 42);
+        assert!(converted.is_charging);
+    }
+
+    #[test]
+    fn repr_registry_tolerates_missing_keys() {
+        // macOS 27 no longer reports `AbsoluteCapacity`; parsing must not fail.
+        let xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>CurrentCapacity</key><integer>95</integer>
+    <key>IsCharging</key><true/>
+    <key>AdapterDetails</key><dict>
+        <key>Watts</key><integer>96</integer>
+    </dict>
+</dict></plist>"#;
+        let parsed: repr::IORegistry =
+            plist::from_bytes(xml.as_bytes()).expect("lenient registry parse");
+        assert_eq!(parsed.current_capacity, 95);
+        assert!(parsed.is_charging);
+        assert_eq!(parsed.absolute_capacity, 0);
+        assert_eq!(parsed.adapter_details.watts, Some(96));
+        assert!(parsed.adapter_details.name.is_none());
+
+        let converted = IORegistry::from(parsed);
+        assert_eq!(converted.current_capacity, 95);
+        assert!(converted.is_charging);
+    }
+
+    #[test]
+    fn absolute_battery_level_never_nan() {
+        let mut registry = IORegistry {
+            current_capacity: 40,
+            ..Default::default()
+        };
+        assert_eq!(registry.absolute_battery_level(), 40.0);
+
+        registry.apple_raw_max_capacity = 8_900;
+        registry.apple_raw_current_capacity = 8_500;
+        let level = registry.absolute_battery_level();
+        assert!(level.is_finite());
+        assert!((level - 95.5).abs() < 0.1);
     }
 }

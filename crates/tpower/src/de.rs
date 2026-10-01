@@ -43,7 +43,7 @@ with_repr! {
     }
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"), default)]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct AdapterDetails {
         pub adapter_voltage: Option<i32>,
@@ -56,7 +56,7 @@ with_repr! {
 
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"), default)]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct PowerTelemetryData {
         pub adapter_efficiency_loss: i32,
@@ -69,7 +69,7 @@ with_repr! {
     }
 
     #[out, serde(rename_all = "camelCase"), cfg_attr(feature = "specta", derive(specta::Type))]
-    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"))]
+    #[repr, serde(rename_all(deserialize = "PascalCase", serialize = "camelCase"), default)]
     #[derive(Debug, Clone, Default, Deserialize, Serialize)]
     pub struct IORegistry {
         pub adapter_details: AdapterDetails,
@@ -104,5 +104,16 @@ impl Deref for IORegistry {
 impl IORegistry {
     pub fn ptd(&self) -> Option<&PowerTelemetryData> {
         self.power_telemetry_data.as_ref()
+    }
+
+    /// True battery level in percent. Falls back to the reported capacity
+    /// when raw values are unavailable (e.g. newer macOS releases), so the
+    /// result is always finite and JSON-serializable.
+    pub fn absolute_battery_level(&self) -> f32 {
+        if self.apple_raw_max_capacity > 0 {
+            self.apple_raw_current_capacity as f32 / self.apple_raw_max_capacity as f32 * 100.
+        } else {
+            self.current_capacity as f32
+        }
     }
 }
