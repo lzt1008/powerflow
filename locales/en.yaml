@@ -20,6 +20,7 @@ status:
   to_full: to full
   to_empty: to empty
   fully_charged: Fully Charged
+  calculating: Calculating…
   battery_in: Battery In
   power_loss: Power Loss
   screen_power: Screen
@@ -67,6 +68,8 @@ settings:
   build: Build
   license: License
   author: Author
+  hide_on_startup: Hide Window on Startup
+  hide_on_startup_desc: Start in the menu bar without opening the main window
 
 time:
   minute: minute|minute|minutes

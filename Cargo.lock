@@ -3677,6 +3677,7 @@ dependencies = [
 name = "powerflow"
 version = "0.2.2"
 dependencies = [
+ "anyhow",
  "bincode",
  "chrono",
  "cocoa 0.26.0",

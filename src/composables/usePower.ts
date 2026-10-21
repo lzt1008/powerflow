@@ -1,7 +1,6 @@
 import type { InterfaceType, NormalizedResource } from '@/bindings'
 import type { Reactive } from 'vue'
 import { events } from '@/bindings'
-import { useDocumentVisibility } from '@vueuse/core'
 
 import { computed, reactive } from 'vue'
 import { useTab } from './useTab'
@@ -118,20 +117,30 @@ events.deviceEvent.listen(({ payload }) => {
   }
 })
 
-const vis = useDocumentVisibility()
 const tab = useTab()
 
+const emptyPower = {} as NormalizedResource
+
 const currentPower = computed<RawPowerData>(() => {
-  return tab.value === 'local' ? power.local : power.remote[tab.value] || {}
+  if (tab.value === 'local')
+    return power.local
+  return power.remote[tab.value] ?? {
+    data: emptyPower,
+    statistics: [],
+  }
 })
 
 export function usePower() {
-  return computed(() => ({
-    ...currentPower.value.data,
-    isLoading: Object.keys(currentPower.value.data).length === 0 || vis.value === 'hidden',
-    isRemote: tab.value !== 'local',
-    statistics: currentPower.value.statistics,
-  }))
+  return computed(() => {
+    const { data, statistics } = currentPower.value
+    return {
+      ...data,
+      // Keep last known values when the window is hidden — don't flash skeletons.
+      isLoading: Object.keys(data).length === 0,
+      isRemote: tab.value !== 'local',
+      statistics,
+    }
+  })
 }
 
 export function usePowerData() {

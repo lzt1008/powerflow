@@ -7,14 +7,17 @@ const rawData = usePowerRaw()
 
 const showRemainDuration = ref(true)
 const buttonText = computed(() => {
+  const remain = power.value.timeRemain
+  if (!remain)
+    return '--'
   if (showRemainDuration.value) {
-    const minutes = power.value.timeRemain.secs / 60
+    const minutes = Math.floor(remain.secs / 60)
     const hours = Math.floor(minutes / 60)
 
     return `${hours}h ${minutes % 60}m`
   }
   return format(
-    addSeconds(new Date(), power.value.timeRemain.secs),
+    addSeconds(new Date(), remain.secs),
     'HH:mm',
   )
 })

@@ -1,0 +1,94 @@
+name: build dmg
+
+# Builds a macOS DMG for every branch push and manual run, so a pull request
+# can offer a ready-to-install build even when the upstream release pipeline
+# only runs for tags.
+on:
+  push:
+    branches:
+      - 'fix/**'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag for the draft release (e.g. v0.2.3-macos27). Leave empty to skip the release.'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    strategy:
+      matrix:
+        include:
+          - target: universal-apple-darwin
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 21
+          cache: pnpm
+
+      - name: Cache the cargo registry and build directory
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin,aarch64-apple-darwin
+
+      - name: Build app and DMG
+        env:
+          # https://github.com/tauri-apps/tauri-action/issues/740
+          CI: false
+        run: pnpm tauri build --target ${{ matrix.target }} --bundles app,dmg
+
+      - name: Collect the DMG
+        id: dmg
+        run: |
+          set -euo pipefail
+          # The cargo workspace shares one target directory at the repository
+          # root, and `--target universal-apple-darwin` puts the bundle in
+          # `target/universal-apple-darwin/release/bundle/dmg`, so search for
+          # the file instead of hardcoding a path.
+          dmg=$(find . -name '*.dmg' -not -path './node_modules/*' -not -path './.git/*' | head -n 1)
+          test -n "$dmg"
+          cp "$dmg" "$RUNNER_TEMP/$(basename "$dmg")"
+          echo "path=$RUNNER_TEMP/$(basename "$dmg")" >> "$GITHUB_OUTPUT"
+          echo "collected $dmg"
+
+      - name: Upload the DMG as a workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: powerflow-dmg
+          path: ${{ steps.dmg.outputs.path }}
+          if-no-files-found: error
+
+      - name: Publish the DMG as a prerelease
+        if: ${{ inputs.tag != '' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ inputs.tag }}
+          body: |
+            Community build of Powerflow with the macOS 26/27 fixes applied.
+            See the pull request for details.
+          draft: false
+          prerelease: true
+          files: ${{ steps.dmg.outputs.path }}

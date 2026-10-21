@@ -31,6 +31,7 @@ impl SMCReadSensor for SMCConnection {
             .into_iter()
             .fold(SMCPowerData::default(), |mut acc, key| {
                 if let Ok(Some(val)) = self.read_key(key).map(|v| v.value()) {
+                    let val = Some(val);
                     match key {
                         "PPBR" => acc.battery_rate = val,
                         "PDTR" => acc.delivery_rate = val,
@@ -52,26 +53,28 @@ impl SMCReadSensor for SMCConnection {
     }
 }
 
+/// SMC readings; `None` when the key does not exist on this Mac or could not
+/// be read, so callers can fall back to other sources instead of using 0.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[cfg_attr(feature = "specta", derive(specta::Type))]
 #[serde(rename_all = "camelCase")]
 pub struct SMCPowerData {
-    pub battery_rate: f32,
-    pub delivery_rate: f32,
-    pub system_total: f32,
-    pub heatpipe: f32,
-    pub brightness: f32,
-    pub full_charge_capacity: f32,
-    pub current_capacity: f32,
-    pub charging_status: f32,
-    pub time_to_empty: f32,
-    pub time_to_full: f32,
-    pub temperature: f32,
+    pub battery_rate: Option<f32>,
+    pub delivery_rate: Option<f32>,
+    pub system_total: Option<f32>,
+    pub heatpipe: Option<f32>,
+    pub brightness: Option<f32>,
+    pub full_charge_capacity: Option<f32>,
+    pub current_capacity: Option<f32>,
+    pub charging_status: Option<f32>,
+    pub time_to_empty: Option<f32>,
+    pub time_to_full: Option<f32>,
+    pub temperature: Option<f32>,
 }
 
 impl SMCPowerData {
     pub fn is_charging(&self) -> bool {
-        self.charging_status > f32::EPSILON
+        self.charging_status.is_some_and(|v| v > f32::EPSILON)
     }
 }
 
@@ -168,41 +171,41 @@ impl FromStr for SMCType {
     }
 }
 
-fn fp_to_float32(fp: &str, bytes: &[u8; 32], _size: u32) -> Result<f32, ()> {
-    let (div, signed) = match fp {
-        "fp1f" => (32768.0, false),
-        "fp2e" => (16384.0, false),
-        "fp3d" => (8192.0, false),
-        "fp4c" => (4096.0, false),
-        "fp5b" => (2048.0, false),
-        "fp6a" => (1024.0, false),
-        "fp79" => (512.0, false),
-        "fp88" => (256.0, false),
-        "fpa6" => (64.0, false),
-        "fpc4" => (16.0, false),
-        "fpe2" => (4.0, false),
-        // Signed
-        "sp1e" => (16384.0, true),
-        "sp2d" => (8192.0, true),
-        "sp3c" => (4096.0, true),
-        "sp4b" => (2048.0, true),
-        "sp5a" => (1024.0, true),
-        "sp69" => (512.0, true),
-        "sp78" => (256.0, true),
-        "sp87" => (128.0, true),
-        "sp96" => (64.0, true),
-        "spa5" => (32.0, true),
-        "spb4" => (16.0, true),
-        "spf0" => (1.0, true),
-        _ => (0.0, false),
+/// Decode the SMC fixed-point types (`fpXY` unsigned / `spXY` signed), where
+/// `Y` is the number of fractional bits. These are always big-endian.
+fn fixed_point_to_f32(data_type: &str, bytes: &[u8; 32]) -> Option<f32> {
+    let mut chars = data_type.chars();
+    let signed = match chars.next()? {
+        'f' => false,
+        's' => true,
+        _ => return None,
     };
-
-    let res = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
-
-    if signed {
-        Ok(res as i16 as f32 / div)
+    if chars.next()? != 'p' {
+        return None;
+    }
+    // Skip the integer-bits digit; the last hex digit is the fraction bits.
+    chars.next()?.to_digit(16)?;
+    let fraction_bits = chars.next()?.to_digit(16)?;
+    let raw = u16::from_be_bytes([bytes[0], bytes[1]]);
+    let value = if signed {
+        f32::from(raw as i16)
     } else {
-        Ok(res as f32 / div)
+        f32::from(raw)
+    };
+    Some(value / (1u32 << fraction_bits) as f32)
+}
+
+/// Integer SMC values are little-endian on Apple silicon but big-endian on
+/// Intel Macs.
+fn int_from_bytes<const N: usize>(bytes: &[u8; 32]) -> u64 {
+    let mut buf = [0u8; N];
+    buf.copy_from_slice(&bytes[..N]);
+    if cfg!(target_arch = "x86_64") {
+        buf.iter().fold(0, |acc, b| (acc << 8) | u64::from(*b))
+    } else {
+        buf.iter()
+            .rev()
+            .fold(0, |acc, b| (acc << 8) | u64::from(*b))
     }
 }
 
@@ -217,37 +220,37 @@ pub struct SMCVal {
 
 impl SMCVal {
     fn value(&self) -> Option<f32> {
-        match SMCType::from_str(self.data_type_str()) {
+        if self.data_size == 0 {
+            // key does not exist on this machine
+            return None;
+        }
+        let data_type = self.data_type_str()?;
+        match SMCType::from_str(data_type) {
             Ok(SMCType::FLT) => {
                 let mut buf = [0u8; 4];
                 buf.copy_from_slice(&self.bytes[0..4]);
-                Some(f32::from_le_bytes(buf))
+                Some(f32::from_ne_bytes(buf))
             }
-            Ok(SMCType::UI8) => Some(self.bytes[0] as f32),
-            Ok(SMCType::UI16) => {
-                let mut buf = [0u8; 2];
-                buf.copy_from_slice(&self.bytes[0..2]);
-                Some(u16::from_le_bytes(buf) as f32)
-            }
-            Ok(SMCType::UI32) => {
-                let mut buf = [0u8; 4];
-                buf.copy_from_slice(&self.bytes[0..4]);
-                Some(u32::from_le_bytes(buf) as f32)
-            }
+            Ok(SMCType::UI8) => Some(f32::from(self.bytes[0])),
+            Ok(SMCType::UI16) => Some(int_from_bytes::<2>(&self.bytes) as f32),
+            Ok(SMCType::UI32) => Some(int_from_bytes::<4>(&self.bytes) as f32),
+            Ok(SMCType::SI8) => Some(f32::from(self.bytes[0] as i8)),
+            Ok(SMCType::SI16) => Some(f32::from(int_from_bytes::<2>(&self.bytes) as u16 as i16)),
+            Ok(SMCType::SI32) => Some(int_from_bytes::<4>(&self.bytes) as u32 as i32 as f32),
+            // 48.16 fixed point, native endianness (Apple silicon)
             Ok(SMCType::IOFT) => {
-                fp_to_float32(self.data_type_str(), &self.bytes, self.data_size).ok()
+                let mut buf = [0u8; 8];
+                buf.copy_from_slice(&self.bytes[0..8]);
+                Some(u64::from_ne_bytes(buf) as f32 / 65536.0)
             }
-            Ok(_) => None,
-            Err(_) => None,
+            _ => fixed_point_to_f32(data_type, &self.bytes),
         }
     }
 
-    fn data_type_str(&self) -> &str {
-        match str::from_utf8(&self.data_type) {
-            Ok(s) => s,
-            Err(e) => panic!("{}", e),
-        }
-        .trim()
+    fn data_type_str(&self) -> Option<&str> {
+        str::from_utf8(&self.data_type)
+            .ok()
+            .map(|s| s.trim_matches(|c: char| c == '\0' || c.is_whitespace()))
     }
 }
 
@@ -357,7 +360,10 @@ impl SMCConnection {
 
     #[allow(dead_code)]
     pub fn write_key(&mut self, val: &SMCVal) -> Result<(), kern_return_t> {
-        let key = str_to_u32(std::str::from_utf8(&val.key).unwrap());
+        let key = match std::str::from_utf8(&val.key) {
+            Ok(key) => str_to_u32(key),
+            Err(_) => return Err(kern_return::KERN_INVALID_ARGUMENT),
+        };
 
         // Get key info first
         let key_info = self.get_key_info(key)?;
@@ -424,4 +430,43 @@ fn u32_to_bytes(val: u32) -> [u8; 4] {
         (val >> 8) as u8,
         val as u8,
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn val(data_type: &[u8; 4], size: u32, bytes: &[u8]) -> SMCVal {
+        let mut v = SMCVal {
+            data_type: *data_type,
+            data_size: size,
+            ..Default::default()
+        };
+        v.bytes[..bytes.len()].copy_from_slice(bytes);
+        v
+    }
+
+    #[test]
+    fn decodes_fixed_point_big_endian() {
+        // sp78: 0x1a80 = 26.5
+        assert_eq!(val(b"sp78", 2, &[0x1a, 0x80]).value(), Some(26.5));
+        // fpe2: 0x0010 = 4.0
+        assert_eq!(val(b"fpe2", 2, &[0x00, 0x10]).value(), Some(4.0));
+        // sp96 signed negative: 0xff80 = -2.0
+        assert_eq!(val(b"sp96", 2, &[0xff, 0x80]).value(), Some(-2.0));
+    }
+
+    #[test]
+    fn decodes_float_and_missing_keys() {
+        assert_eq!(val(b"flt ", 4, &1.5f32.to_ne_bytes()).value(), Some(1.5));
+        assert_eq!(val(b"\0\0\0\0", 0, &[]).value(), None);
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    #[test]
+    fn decodes_integers_little_endian_on_apple_silicon() {
+        // B0FC on an M2 MacBook Air: 0x1189 = 4489 mAh
+        assert_eq!(val(b"ui16", 2, &[0x89, 0x11]).value(), Some(4489.0));
+        assert_eq!(val(b"si16", 2, &[0xc5, 0xff]).value(), Some(-59.0));
+    }
 }

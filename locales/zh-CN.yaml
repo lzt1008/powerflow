@@ -19,6 +19,7 @@ status:
   to_full: 充满
   to_empty: 耗尽
   fully_charged: 已充满
+  calculating: 计算中…
   battery_in: 电池输入
   power_loss: 损耗
   screen_power: 屏幕
@@ -62,6 +63,8 @@ settings:
   build: 构建
   license: 许可证
   author: 作者
+  hide_on_startup: 启动时隐藏窗口
+  hide_on_startup_desc: 启动后仅显示在菜单栏，不打开主窗口
   version: 版本
 
 time:

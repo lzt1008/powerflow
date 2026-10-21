@@ -19,7 +19,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
 import { open } from '@tauri-apps/plugin-shell'
-import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from 'lucide-vue-next'
+import { Activity, BadgeInfo, BatteryCharging, CircleDashed, ExternalLink, Eye, EyeOff, Gauge, Languages, Moon, Palette, RotateCw, Sun, SunMoon, Wallet } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { h, ref, watch } from 'vue'
 import { version } from '../package.json'
@@ -144,6 +144,9 @@ function SettingsSection(props: SettingsSectionProps) {
               <SelectItem value="en">
                 English
               </SelectItem>
+              <SelectItem value="zh-TW">
+                繁體中文
+              </SelectItem>
               <SelectItem value="zh-CN">
                 简体中文
               </SelectItem>
@@ -211,6 +214,18 @@ function SettingsSection(props: SettingsSectionProps) {
           class="data-[state=checked]:bg-blue-500"
           disabled
           checked
+        />
+      </SettingsItem>
+
+      <SettingsItem
+        :name="$t('settings.hide_on_startup')"
+        :description="$t('settings.hide_on_startup_desc')"
+        :icon="EyeOff"
+      >
+        <Switch
+          id="hide-on-startup"
+          v-model:checked="preference.hideOnStartup"
+          class="data-[state=checked]:bg-blue-500"
         />
       </SettingsItem>
 
