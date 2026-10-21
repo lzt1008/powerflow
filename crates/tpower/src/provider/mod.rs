@@ -453,7 +453,6 @@ mod tests {
                 full_charge_capacity: Some(4489),
                 remaining_capacity: Some(2889),
                 design_capacity: Some(5760),
-                ..Default::default()
             }),
             current_capacity: Some(65),
             max_capacity: Some(100),

@@ -9,8 +9,8 @@ use std::{
 const FONT_ATTEMPTS: u8 = 5;
 
 use tauri::{
-    menu::{MenuBuilder, MenuItemBuilder},
-    tray::{MouseButtonState, TrayIconBuilder, TrayIconEvent},
+    menu::{Menu, MenuBuilder, MenuItemBuilder},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, Runtime,
 };
 use tauri_plugin_nspopover::{AppExt, WindowExt as _};
@@ -28,11 +28,26 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
         .item(&quit)
         .build()?;
 
+    // The menu must not stay attached to the status item. `NSStatusItem.setMenu`
+    // makes AppKit handle `mouseDown:` itself and swallow it before it reaches
+    // the tray icon's own view, so no Click event is ever emitted and the
+    // popover can never be opened. `menu_on_left_click(false)` only flips
+    // tray-icon's own flag; the AppKit-level interception stays. The menu is
+    // therefore attached on demand for right clicks only (see below).
+    let menu_for_right_click = menu.clone();
+
     let tray_icon = TrayIconBuilder::with_id("main")
         .title(PowerUpdatedEvent::new(0.0).0)
         .menu_on_left_click(false)
-        .menu(&menu)
         .build(app)?;
+
+    // Turn the popover window into a real `NSPopover` anchored to the status
+    // item button. This has to happen before the tray event handler is
+    // registered: it is what initializes the plugin's state, and the handler
+    // reads the status bar button from it.
+    if let Some(popover) = app.popover_window() {
+        popover.to_popover();
+    }
 
     tray_icon.on_menu_event(move |app, event| match event.id() {
         val if val == show.id() => show_main_window(app),
@@ -45,17 +60,48 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
 
     tray_icon.on_tray_icon_event(move |tray_handle, event| {
         tauri_plugin_positioner::on_tray_event(tray_handle.app_handle(), &event);
-        if let TrayIconEvent::Click {
-            button_state: MouseButtonState::Up,
-            ..
-        } = event
-        {
-            let handle = tray_handle.app_handle();
-            if handle.is_popover_shown() {
-                handle.hide_popover();
-            } else {
-                handle.show_popover();
+        match event {
+            // Left click toggles the popover.
+            TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } => {
+                let handle = tray_handle.app_handle();
+                // Make sure no menu is attached, otherwise AppKit would swallow
+                // the click that opened the popover.
+                log_err(
+                    tray_handle.set_menu(None::<Menu<R>>),
+                    "detach tray menu before opening the popover",
+                );
+                if handle.is_popover_shown() {
+                    handle.hide_popover();
+                } else {
+                    handle.show_popover();
+                }
             }
+            // Right click gets the context menu. The menu cannot stay
+            // attached (see above), so attach it for this click, ask the
+            // button to perform its click so AppKit actually pops the menu,
+            // then detach it again. `performClick` blocks until the menu
+            // closes, so the matching mouse-up may never arrive and cannot be
+            // relied on for cleanup.
+            TrayIconEvent::Click {
+                button: MouseButton::Right,
+                button_state: MouseButtonState::Down,
+                ..
+            } => {
+                if let Err(error) = tray_handle.set_menu(Some(menu_for_right_click.clone())) {
+                    log::error!("failed to attach tray menu: {error}");
+                    return;
+                }
+                let button = tray_handle.app_handle().ns_statusbar_button();
+                unsafe { button.performClick(None) };
+                if let Err(error) = tray_handle.set_menu(None::<Menu<R>>) {
+                    log::error!("failed to detach tray menu: {error}");
+                }
+            }
+            _ => {}
         }
     });
 
@@ -83,10 +129,6 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
             );
         }
     });
-
-    if let Some(popover) = app.popover_window() {
-        popover.to_popover();
-    }
 
     Ok(())
 }
