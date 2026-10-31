@@ -1,12 +1,18 @@
 name: build
 
 on:
-  push:
-    tags:
-      - 'v*'
+  pull_request:
+    branches: [main]
+    types: [closed]
 
 jobs:
   build-macos:
+    if: >-
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'release/')
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -14,15 +20,17 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -44,4 +52,5 @@ jobs:
           releaseBody: See the assets to download this version and install.
           releaseDraft: true
           prerelease: false
+          releaseCommitish: ${{ github.event.pull_request.merge_commit_sha }}
           args: --target ${{ matrix.target }}
