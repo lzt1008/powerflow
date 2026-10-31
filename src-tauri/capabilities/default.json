@@ -12,8 +12,6 @@
     "core:window:allow-start-dragging",
     "shell:allow-open",
     "notification:default",
-    "dialog:allow-save",
-    "fs:allow-create",
-    "fs:allow-write"
+    "dialog:allow-save"
   ]
 }

@@ -12,3 +12,7 @@ tpower = { path = "crates/tpower" }
 pedantic = "warn"
 nursery = "warn"
 cargo = "warn"
+
+# macOS 27 rejects strip-misaligned proc-macro dylibs (LINKEDIT string pool).
+[profile.release.package.sqlx-macros]
+strip = "none"

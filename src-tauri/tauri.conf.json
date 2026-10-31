@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "powerflow",
-  "version": "0.2.2",
-  "identifier": "Powerflow",
+  "productName": "Mac电源助手",
+  "version": "0.1.0",
+  "identifier": "com.cnveteran.mac-power-assistant",
   "build": {
     "beforeDevCommand": "pnpm dev",
     "devUrl": "http://localhost:1420",
@@ -13,10 +13,11 @@
     "macOSPrivateApi": true,
     "windows": [
       {
-        "title": "",
-        "width": 1000,
-        "height": 600,
-        "titleBarStyle": "Overlay"
+        "title": "Mac电源助手",
+        "width": 900,
+        "height": 640,
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true
       },
       {
         "label": "popover",
@@ -36,13 +37,15 @@
         "label": "settings",
         "url": "settings.html",
         "titleBarStyle": "Overlay",
-        "title": "Settings",
+        "title": "Mac电源助手设置",
         "width": 700,
         "height": 800,
         "visible": false
       }
     ],
-    "security": {}
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' asset: data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src ipc: http://ipc.localhost http://localhost:1420 ws://localhost:1421"
+    }
   },
   "bundle": {
     "active": true,

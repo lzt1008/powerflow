@@ -194,10 +194,10 @@ fn fp_to_float32(fp: &str, bytes: &[u8; 32], _size: u32) -> Result<f32, ()> {
         "spa5" => (32.0, true),
         "spb4" => (16.0, true),
         "spf0" => (1.0, true),
-        _ => (0.0, false),
+        _ => return Err(()),
     };
 
-    let res = u16::from_le_bytes(bytes[0..2].try_into().unwrap());
+    let res = u16::from_be_bytes([bytes[0], bytes[1]]);
 
     if signed {
         Ok(res as i16 as f32 / div)
@@ -217,7 +217,8 @@ pub struct SMCVal {
 
 impl SMCVal {
     fn value(&self) -> Option<f32> {
-        match SMCType::from_str(self.data_type_str()) {
+        let data_type = self.data_type_str()?;
+        match SMCType::from_str(data_type) {
             Ok(SMCType::FLT) => {
                 let mut buf = [0u8; 4];
                 buf.copy_from_slice(&self.bytes[0..4]);
@@ -227,27 +228,21 @@ impl SMCVal {
             Ok(SMCType::UI16) => {
                 let mut buf = [0u8; 2];
                 buf.copy_from_slice(&self.bytes[0..2]);
-                Some(u16::from_le_bytes(buf) as f32)
+                Some(u16::from_be_bytes(buf) as f32)
             }
             Ok(SMCType::UI32) => {
                 let mut buf = [0u8; 4];
                 buf.copy_from_slice(&self.bytes[0..4]);
-                Some(u32::from_le_bytes(buf) as f32)
+                Some(u32::from_be_bytes(buf) as f32)
             }
-            Ok(SMCType::IOFT) => {
-                fp_to_float32(self.data_type_str(), &self.bytes, self.data_size).ok()
-            }
+            Ok(SMCType::IOFT) => fp_to_float32(data_type, &self.bytes, self.data_size).ok(),
             Ok(_) => None,
             Err(_) => None,
         }
     }
 
-    fn data_type_str(&self) -> &str {
-        match str::from_utf8(&self.data_type) {
-            Ok(s) => s,
-            Err(e) => panic!("{}", e),
-        }
-        .trim()
+    fn data_type_str(&self) -> Option<&str> {
+        str::from_utf8(&self.data_type).ok().map(str::trim)
     }
 }
 
@@ -357,7 +352,10 @@ impl SMCConnection {
 
     #[allow(dead_code)]
     pub fn write_key(&mut self, val: &SMCVal) -> Result<(), kern_return_t> {
-        let key = str_to_u32(std::str::from_utf8(&val.key).unwrap());
+        let key = match std::str::from_utf8(&val.key) {
+            Ok(key) => str_to_u32(key),
+            Err(_) => return Err(kern_return::KERN_INVALID_ARGUMENT),
+        };
 
         // Get key info first
         let key_info = self.get_key_info(key)?;

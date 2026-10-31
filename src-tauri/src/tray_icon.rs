@@ -18,33 +18,34 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
         .item(&show)
         .separator()
         .item(&quit)
-        .build()
-        .unwrap();
+        .build()?;
 
     let tray_icon = TrayIconBuilder::with_id("main")
         .title("0 w")
         .menu_on_left_click(false)
         .menu(&menu)
-        .build(app)
-        .unwrap();
+        .build(app)?;
 
     tray_icon.on_menu_event(move |tray_handle, event| match event.id() {
-        val if val == show.id() => {
-            let (window, _) = tray_handle
-                .app_handle()
-                .get_or_create_window("main")
-                .unwrap();
-
-            if !window.is_visible().unwrap() {
-                window.show().unwrap();
-                window.set_focus().unwrap();
-
-                tray_handle
-                    .app_handle()
-                    .set_activation_policy(ActivationPolicy::Regular)
-                    .unwrap();
+        val if val == show.id() => match tray_handle.app_handle().get_or_create_window("main") {
+            Ok((window, _)) => {
+                if !window.is_visible().unwrap_or(false) {
+                    if let Err(error) = window.show() {
+                        log::error!("Failed to show main window: {error}");
+                    }
+                    if let Err(error) = window.set_focus() {
+                        log::error!("Failed to focus main window: {error}");
+                    }
+                    if let Err(error) = tray_handle
+                        .app_handle()
+                        .set_activation_policy(ActivationPolicy::Regular)
+                    {
+                        log::error!("Failed to update activation policy: {error}");
+                    }
+                }
             }
-        }
+            Err(error) => log::error!("Failed to create main window: {error}"),
+        },
         val if val == quit.id() => {
             tray_handle.app_handle().cleanup_before_exit();
             process::exit(0);
@@ -69,10 +70,14 @@ pub fn setup_tray_icon<R: Runtime>(app: &impl Manager<R>) -> tauri::Result<()> {
     });
 
     PowerUpdatedEvent::listen(app.app_handle(), move |event| {
-        tray_icon.set_title(Some(event.payload.0)).unwrap();
+        if let Err(error) = tray_icon.set_title(Some(event.payload.0)) {
+            log::error!("Failed to update tray title: {error}");
+        }
     });
 
-    app.popover_window().unwrap().to_popover();
+    if let Some(popover) = app.popover_window() {
+        popover.to_popover();
+    }
 
     Ok(())
 }

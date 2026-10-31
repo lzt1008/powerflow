@@ -2,11 +2,49 @@ name: build
 
 on:
   push:
+    branches:
+      - '**'
     tags:
       - 'v*'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
+  quality:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Frontend lint
+        run: pnpm lint
+      - name: Frontend type check
+        run: pnpm typecheck
+      - name: Frontend tests
+        run: pnpm test
+      - name: Rust format
+        run: cargo fmt --all --check
+      - name: Rust lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Rust tests
+        run: cargo test --workspace
+
   build-macos:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: quality
+    permissions:
+      contents: write
     strategy:
       matrix:
         include:
@@ -18,11 +56,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 21
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: install Rust
         uses: dtolnay/rust-toolchain@stable

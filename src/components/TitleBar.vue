@@ -55,7 +55,7 @@ const {
           <Skeleton v-if="tabNameLoading" class="w-32 h-4" />
           <span v-else class="text-secondary-foreground font-bold">{{ tabName }}</span>
           <span class="text-[10px] leading-[10px] font-normal text-muted-foreground">
-            {{ tab === 'local' ? 'Local' : Array.from(data.remote[tab].interface || []).join(' and ') || 'offline' }}
+            {{ tab === 'local' ? $t('navigation.local') : Array.from(data.remote[tab].interface || []).join(' / ') || $t('navigation.offline') }}
           </span>
         </div>
       </div>
@@ -65,7 +65,7 @@ const {
         class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer"
         @click="$route.path === '/history' ? $router.back() : $router.push('/history')"
       >
-        <CommonTooltip content="History" as-child>
+        <CommonTooltip :content="$t('navigation.history')" as-child>
           <History
             :stroke-width="1.8"
             class="text-muted-foreground size-5 transition-transform duration-300"
@@ -77,7 +77,7 @@ const {
         class="rounded-md p-2 hover:bg-muted transition-colors cursor-pointer"
         @click="commands.openSettings()"
       >
-        <CommonTooltip content="Settings" as-child>
+        <CommonTooltip :content="$t('navigation.settings')" as-child>
           <SettingsIcon
             :stroke-width="1.8"
             class="text-muted-foreground size-5"

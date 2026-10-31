@@ -103,7 +103,7 @@ function SettingsSection(props: SettingsSectionProps) {
       >
         <Select v-model="preference.theme">
           <SelectTrigger class="w-[130px]">
-            <SelectValue placeholder="Select a theme" />
+            <SelectValue :placeholder="$t('settings.theme')" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -135,9 +135,9 @@ function SettingsSection(props: SettingsSectionProps) {
         :description="$t('settings.language_desc')"
         :icon="Languages"
       >
-        <Select v-model="preference.language" default-value="en">
+        <Select v-model="preference.language" default-value="zh-CN">
           <SelectTrigger class="w-[120px]">
-            <SelectValue placeholder="Select a language" />
+            <SelectValue :placeholder="$t('settings.language')" />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
@@ -191,8 +191,9 @@ function SettingsSection(props: SettingsSectionProps) {
             unit: 'millisecond',
             unitDisplay: 'short',
           }"
-          locale="en-US"
+          locale="zh-CN"
           :min="500"
+          :max="60000"
           :step="500"
           class="w-32"
         >
@@ -298,9 +299,9 @@ function SettingsSection(props: SettingsSectionProps) {
           {{ commitHash.slice(0, 7) }}
           <a
             class="ml-2 mr-1 text-xs text-muted-foreground underline flex items-center gap-1 cursor-pointer"
-            @click="open(`https://github.com/lzt1008/powerflow/commit/${commitHash}`)"
+            @click="open(`https://github.com/cnveteran/powerflow/commit/${commitHash}`)"
           >
-            View on GitHub
+            {{ $t('settings.view_github') }}
             <ExternalLink class="size-3 text-muted-foreground" />
           </a>
         </div>
@@ -318,7 +319,7 @@ function SettingsSection(props: SettingsSectionProps) {
           {{ $t('settings.author') }}
         </div>
         <div class="text-sm">
-          Samuel Lyon
+          cnveteran
         </div>
       </div>
     </div>

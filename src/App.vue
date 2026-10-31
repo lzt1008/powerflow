@@ -21,13 +21,13 @@ watchEffect(() => {
     <TitleBar />
     <div
       ref="target"
-      class="h-[calc(100vh-52px)] pb-4"
+      class="h-[calc(100vh-52px)] pb-4 overflow-y-auto"
     >
       <TabsContent
         v-for="udid in ['local', ...Object.keys(data.remote)]"
         :key="udid"
         :value="udid"
-        class="overflow-y-auto h-full"
+        class="h-full"
       >
         <RouterView v-slot="{ Component }">
           <Transition

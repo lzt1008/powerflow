@@ -31,7 +31,7 @@ const { t } = useI18n()
         class="text-sm font-medium truncate"
         :class="power.isCharging ? 'text-blue-500' : 'text-muted-foreground'"
       >
-        <span v-if="power.isCharging && power.batteryLevel === 100">{{ $t('status.fully_charged') }}</span>
+        <span v-if="power.isCharging && power.batteryLevel >= 99.5">{{ $t('status.fully_charged') }}</span>
         <template v-else>
           <span class="font-semibold mr-1">{{ formatChargingDuration(power.timeRemain.secs, t) }}</span>
           <span>{{ power.isCharging ? $t('status.to_full') : $t('status.to_empty') }}</span>

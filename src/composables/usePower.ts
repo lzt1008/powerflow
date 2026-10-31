@@ -1,7 +1,6 @@
 import type { InterfaceType, NormalizedResource } from '@/bindings'
 import type { Reactive } from 'vue'
 import { events } from '@/bindings'
-import { useDocumentVisibility } from '@vueuse/core'
 
 import { computed, reactive } from 'vue'
 import { useTab } from './useTab'
@@ -46,7 +45,7 @@ events.powerTickEvent.listen(async ({ payload: { data } }) => {
   trimStatistics(localPowerData.statistics)
 
   localPowerData.statistics.push({
-    'time': new Date().toLocaleTimeString(),
+    'time': new Date().toLocaleTimeString('zh-CN', { hour12: false }),
     'System Power': data.systemLoad,
     'System In': data.systemIn,
     'Battery Level': data.batteryLevel,
@@ -62,7 +61,7 @@ events.devicePowerTickEvent.listen(({ payload: { data, udid } }) => {
   const statistics = deviceData.statistics
   trimStatistics(statistics)
 
-  const time = new Date(data.lastUpdate * 1000).toLocaleTimeString()
+  const time = new Date(data.lastUpdate * 1000).toLocaleTimeString('zh-CN', { hour12: false })
 
   if (!statistics.length || time !== statistics[statistics.length - 1]?.time) {
     statistics.push({
@@ -118,20 +117,31 @@ events.deviceEvent.listen(({ payload }) => {
   }
 })
 
-const vis = useDocumentVisibility()
 const tab = useTab()
 
+const emptyPower = {} as NormalizedResource
+
 const currentPower = computed<RawPowerData>(() => {
-  return tab.value === 'local' ? power.local : power.remote[tab.value] || {}
+  if (tab.value === 'local')
+    return power.local
+  return power.remote[tab.value] ?? {
+    data: emptyPower,
+    statistics: [],
+  }
 })
 
 export function usePower() {
-  return computed(() => ({
-    ...currentPower.value.data,
-    isLoading: Object.keys(currentPower.value.data).length === 0 || vis.value === 'hidden',
-    isRemote: tab.value !== 'local',
-    statistics: currentPower.value.statistics,
-  }))
+  return computed(() => {
+    const data = currentPower.value.data ?? emptyPower
+    const hasData = data != null && Object.keys(data).length > 0
+    return {
+      ...data,
+      // Keep last known values when the window is hidden — don't flash skeletons.
+      isLoading: !hasData,
+      isRemote: tab.value !== 'local',
+      statistics: currentPower.value.statistics ?? [],
+    }
+  })
 }
 
 export function usePowerData() {

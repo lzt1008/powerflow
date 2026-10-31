@@ -1,8 +1,8 @@
 [package]
-name = "powerflow"
-version = "0.2.2"
-description = "Monitoring power usage of mac and iOS devices"
-authors = [ "Samuel Lyon" ]
+name = "mac-power-assistant"
+version = "0.1.0"
+description = "Mac 电源与充电状态监控助手"
+authors = [ "cnveteran" ]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,7 +11,7 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "powerflow_lib"
+name = "mac_power_assistant_lib"
 crate-type = [
   "staticlib",
   "cdylib",
@@ -27,6 +27,7 @@ cargo-clippy = []
 tauri-build = { version = "2", features = [ "config-toml" ] }
 
 [dependencies]
+anyhow = "1"
 tpower = { features = [ "specta" ], workspace = true }
 tauri = { version = "2", features = [
   "macos-private-api",
@@ -71,4 +72,3 @@ derive_more = { version = "1.0.0", features = [ "deref" ] }
 cocoa = "0.26.0"
 objc = "0.2.7"
 tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"

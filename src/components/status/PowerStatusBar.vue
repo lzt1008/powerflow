@@ -47,12 +47,13 @@ const handle = watchEffect(() => {
   if (!power.value.isRemote) {
     parts.screen = power.value.brightnessPower
     parts.heatpipe = power.value.heatpipePower
-    parts.systemOther = parts.systemTotal - parts.screen - parts.heatpipe
+    parts.systemOther = Math.max(0, parts.systemTotal - parts.screen - parts.heatpipe)
     delete parts.systemTotal
   }
 
   let current = 0
   const sorted = Object.entries(parts)
+    .filter(([, value]) => Number.isFinite(value) && value > 0)
     .sort((a, b) => b[1] - a[1])
     .map(([key, value]) => {
       const ret = [key, current] as const
@@ -63,17 +64,18 @@ const handle = watchEffect(() => {
   const sum = power.value.isCharging
     ? power.value.systemIn + power.value.efficiencyLoss
     : power.value.systemLoad
+  const safeSum = Number.isFinite(sum) && sum > 0 ? sum : 1
   data.value = {
-    parts: Object.entries(parts)
-      .map(([key, value]) =>
+    parts: sorted
+      .map(([key, left], index) =>
         [key, {
-          value,
-          left: sorted[sorted.findIndex(([k]) => k === key)][1] / sum,
-          color: colors[sorted.findIndex(([k]) => k === key)],
+          value: parts[key],
+          left: left / safeSum,
+          color: colors[index % colors.length],
           locale: localeMap.value[key as keyof UnwrapRef<typeof localeMap>],
         }],
       ),
-    sum,
+    sum: safeSum,
   }
 })
 

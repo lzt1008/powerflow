@@ -21,12 +21,12 @@ onMounted(() => {
     class="w-full h-full flex flex-col gap-2 items-center justify-center text-muted-foreground"
   >
     <Info class="w-6 h-6" />
-    <span class="mb-16">No history recorded yet, charge your device to get started</span>
+    <span class="mb-16">{{ $t('history.empty_desc') }}</span>
   </div>
   <div v-else class="flex h-[calc(100vh-80px)]">
     <div class="flex flex-col gap-4 pl-4 ">
       <h2 class="font-bold text-lg">
-        History
+        {{ $t('history.title') }}
       </h2>
       <div v-if="!isLoading && data" class="flex flex-col gap-4 h-full overflow-y-auto pr-4">
         <HistoryListItem
@@ -50,7 +50,7 @@ onMounted(() => {
       <div v-else class="overflow-y-auto h-full flex flex-col items-center justify-center">
         <Info class="size-6" />
         <p class="text-muted-foreground font-medium text-sm mb-10">
-          Select a charging session to view details
+          {{ $t('history.select') }}
         </p>
       </div>
     </div>

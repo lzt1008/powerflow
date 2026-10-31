@@ -3,15 +3,24 @@ import type { ChargingHistory, ChargingHistoryDetail } from '@/bindings'
 import { commands } from '@/bindings'
 import CustomChartTooltip from '@/components/chart/CustomChartTooltip.vue'
 import { useHistory } from '@/composables/useHistory'
-import { shortEnDistanceLocale } from '@/lib/format'
+import { formatChargingDuration } from '@/lib/format'
 import { save } from '@tauri-apps/plugin-dialog'
 import { create } from '@tauri-apps/plugin-fs'
 import { error as logerror } from '@tauri-apps/plugin-log'
-import { format, formatDuration, intervalToDuration } from 'date-fns'
+import { format } from 'date-fns'
 import { Download, EllipsisVertical, Loader2, Trash2 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const props = defineProps<ChargingHistory>()
 const { selectedItem, history } = useHistory()
+const { t } = useI18n()
+
+const historyCategories = computed(() => [
+  t('history.curve_system_in'),
+  t('history.curve_battery_power'),
+  t('history.curve_system_load'),
+  t('history.curve_battery_level'),
+])
 
 const isLoading = ref(true)
 const error = ref()
@@ -29,12 +38,22 @@ const data = asyncComputed(
   isLoading,
 )
 
+const historyCurveData = computed(() =>
+  (data.value.curve ?? []).map(d => ({
+    lastUpdate: new Date(d.lastUpdate * 1000).toLocaleTimeString('zh-CN', { hour12: false }),
+    [t('history.curve_system_in')]: d.systemIn,
+    [t('history.curve_battery_power')]: d.batteryPower,
+    [t('history.curve_system_load')]: d.systemLoad,
+    [t('history.curve_battery_level')]: d.absoluteBatteryLevel,
+  })),
+)
+
 async function exportData() {
   const path = await save({
-    title: 'Export Data',
+    title: t('history.export'),
     filters: [
       {
-        name: 'Json Filter',
+        name: 'JSON',
         extensions: ['json'],
       },
     ],
@@ -60,10 +79,10 @@ async function exportData() {
       <div class="flex justify-between items-center">
         <div>
           <h1 class="text-2xl font-bold">
-            {{ name || 'Unknown' }}
+            {{ name || $t('history.unknown_device') }}
           </h1>
           <h2 class="text-sm font-bold mt-1 text-muted-foreground">
-            with {{ adapterName }}
+            {{ $t('history.with_adapter', { adapter: adapterName }) }}
           </h2>
         </div>
         <div>
@@ -79,19 +98,23 @@ async function exportData() {
                 @click="exportData"
               >
                 <Download class="w-4 h-4" />
-                Export Data
+                {{ $t('history.export') }}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 class="text-red-500 focus:text-red-500 focus:bg-red-500/10"
-                @click="() => {
-                  commands.deleteHistoryById(id)
+                @click="async () => {
+                  const result = await commands.deleteHistoryById(id)
+                  if (result.status === 'error') {
+                    logerror(result.error)
+                    return
+                  }
                   selectedItem = null
                   history.update()
                 }"
               >
                 <Trash2 />
-                Delete
+                {{ $t('history.delete') }}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -100,17 +123,10 @@ async function exportData() {
       <div class="mt-4 grid gap-4 grid-cols-3">
         <div class="space-y-2">
           <div class="text-sm font-medium text-muted-foreground">
-            Duration
+            {{ $t('history.duration') }}
           </div>
           <div class="text-2xl font-bold">
-            {{ formatDuration(
-              intervalToDuration({
-                start: timestamp * 1000,
-                end: timestamp * 1000 + chargingTime * 1000,
-              }),
-              { format: ['hours', 'minutes'], locale: shortEnDistanceLocale },
-            )
-            }}
+            {{ formatChargingDuration(chargingTime, t) }}
           </div>
           <div class="text-xs text-muted-foreground">
             {{ format(timestamp * 1000, 'yyyy-MM-dd HH:mm') }}
@@ -118,60 +134,64 @@ async function exportData() {
         </div>
         <div class="space-y-2">
           <div class="text-sm font-medium text-muted-foreground">
-            Avg Power
+            {{ $t('history.average_power') }}
           </div>
           <div class="text-2xl font-bold">
             {{ data.avg.adapterPower.toFixed(1) }}W
           </div>
           <div class="text-xs text-muted-foreground">
-            Peak: {{ data.peak.adapterPower.toFixed(1) }}W
+            {{ $t('history.peak') }}: {{ data.peak.adapterPower.toFixed(1) }}W
           </div>
         </div>
         <div class="space-y-2">
           <div class="text-sm font-medium text-muted-foreground">
-            Charging rate
+            {{ $t('history.charging_rate') }}
           </div>
           <div class="text-2xl font-bold">
-            {{ ((endLevel - fromLevel) / chargingTime * 60).toFixed(2) }}%/min
+            {{
+              chargingTime > 0
+                ? `${((endLevel - fromLevel) / chargingTime * 60).toFixed(2)}%/${$t('time.minute', 1)}`
+                : '—'
+            }}
           </div>
           <div class="text-xs text-muted-foreground">
-            Avg Temp: {{ data.avg.temperature.toFixed(1) }}°C
+            {{ $t('history.average_temperature') }}: {{ data.avg.temperature.toFixed(1) }}°C
           </div>
         </div>
       </div>
 
       <h2 class="mt-8 font-bold">
-        Charging Curve
+        {{ $t('history.charging_curve') }}
       </h2>
       <LineChart
         class="mt-8 max-h-[220px]"
         index="lastUpdate"
-        :data="data.curve.map(d => ({ ...d, lastUpdate: new Date(d.lastUpdate * 1000).toLocaleTimeString() }))"
-        :categories="['systemIn', 'batteryPower', 'systemLoad', 'absoluteBatteryLevel']"
+        :data="historyCurveData"
+        :categories="historyCategories"
         :custom-tooltip="CustomChartTooltip"
         :show-legend="false"
       />
 
       <h2 class="mt-8 font-bold">
-        Additional Detail
+        {{ $t('history.additional_detail') }}
       </h2>
       <div class="mt-2 grid gap-4 text-sm">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <div class="text-muted-foreground">
-              Temperature Peak
+              {{ $t('history.temperature_peak') }}
             </div>
             <div>{{ data.peak.temperature.toFixed(1) }}°C</div>
           </div>
           <div>
             <div class="text-muted-foreground">
-              Adapter Power Peak
+              {{ $t('history.adapter_power_peak') }}
             </div>
             <div>{{ data.peak.adapterPower.toFixed(1) }}W</div>
           </div>
           <div>
             <div class="text-muted-foreground">
-              Adapter Watts
+              {{ $t('history.adapter_watts') }}
             </div>
             <div>{{ data.peak.adapterWatts }}W({{ data.peak.adapterVoltage }}V, {{ data.peak.adapterAmperage }}A)</div>
           </div>

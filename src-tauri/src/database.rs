@@ -62,8 +62,8 @@ pub async fn delete_history_by_id(
 pub async fn save_charging_history(
     conn: &SqlitePool,
     history: &history::ChargingHistory,
-) -> Result<SqliteQueryResult, sqlx::Error> {
-    let detail = serde_json::to_vec(&history.detail).unwrap();
+) -> anyhow::Result<SqliteQueryResult> {
+    let detail = serde_json::to_vec(&history.detail)?;
     let duration = history.duration;
     query!(
         "INSERT INTO charging_histories (from_level, end_level, charging_time, timestamp, detail, name, udid, is_remote, adapter_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -79,33 +79,42 @@ pub async fn save_charging_history(
     )
     .execute(conn)
     .await
+    .map_err(Into::into)
 }
 
-pub fn setup_database(app: AppHandle) {
+pub fn setup_database(app: AppHandle) -> anyhow::Result<()> {
     block_in_place(|| {
         async_runtime::block_on(async move {
-            let app_data_dir = app
-                .path()
-                .app_data_dir()
-                .expect("Failed to get app data directory");
-
-            let db_path = app_data_dir.join(DEFAULT_DATABASE_NAME);
-
-            if !app_data_dir.exists() {
-                fs::create_dir_all(&app_data_dir).expect("Failed to create app data directory");
+            let persistent = async {
+                let app_data_dir = app.path().app_data_dir()?;
+                if !app_data_dir.exists() {
+                    fs::create_dir_all(&app_data_dir)?;
+                }
+                let db = SqlitePool::connect_with(
+                    SqliteConnectOptions::new()
+                        .filename(app_data_dir.join(DEFAULT_DATABASE_NAME))
+                        .create_if_missing(true),
+                )
+                .await?;
+                migrate!().run(&db).await?;
+                Ok::<_, anyhow::Error>(db)
             }
+            .await;
 
-            let db = SqlitePool::connect_with(
-                SqliteConnectOptions::new()
-                    .filename(db_path)
-                    .create_if_missing(true),
-            )
-            .await
-            .unwrap();
-
-            migrate!().run(&db).await.unwrap();
+            let db = match persistent {
+                Ok(db) => db,
+                Err(error) => {
+                    log::error!(
+                        "Persistent history database unavailable ({error}); using in-memory history"
+                    );
+                    let db = SqlitePool::connect("sqlite::memory:").await?;
+                    migrate!().run(&db).await?;
+                    db
+                }
+            };
 
             app.manage(db);
-        });
-    });
+            Ok(())
+        })
+    })
 }

@@ -37,6 +37,10 @@ export default {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
         },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
@@ -52,6 +56,18 @@ export default {
         card: {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
+        },
+        power: {
+          input: 'hsl(var(--power-input))',
+          system: 'hsl(var(--power-system))',
+          battery: 'hsl(var(--power-battery))',
+          screen: 'hsl(var(--power-screen))',
+          thermal: 'hsl(var(--power-thermal))',
+          loss: 'hsl(var(--power-loss))',
+        },
+        surface: {
+          grouped: 'hsl(var(--surface-grouped))',
+          elevated: 'hsl(var(--surface-elevated))',
         },
       },
       borderRadius: {

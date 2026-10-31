@@ -35,17 +35,17 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
             // println!("Unknown menu event: {}", event);
         }
     });
-    let app_menu = SubmenuBuilder::new(app, "powerflow")
+    let app_menu = SubmenuBuilder::new(app, "Mac电源助手")
         .about(Some(
             AboutMetadataBuilder::new()
-                .authors(Some(vec!["Samuel Lyon.".to_string()]))
-                .license(Some(env!("CARGO_PKG_VERSION")))
+                .authors(Some(vec!["cnveteran".to_string()]))
+                .license(Some("MIT".to_string()))
                 .version(Some(env!("CARGO_PKG_VERSION")))
                 .build(),
         ))
         .separator()
         .item(
-            &MenuItemBuilder::with_id(MenuEvent::Preferences, "Preferences")
+            &MenuItemBuilder::with_id(MenuEvent::Preferences, "设置…")
                 .accelerator("Cmd+,")
                 .build(app)?,
         )
@@ -57,7 +57,7 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
         .quit()
         .build()?;
 
-    let view_menu = SubmenuBuilder::new(app, "View").fullscreen().build()?;
+    let view_menu = SubmenuBuilder::new(app, "显示").fullscreen().build()?;
 
     let menu = MenuBuilder::new(app)
         .item(&app_menu)
@@ -73,13 +73,14 @@ pub fn setup_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 pub fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
     // event.emit(app).unwrap();
     match event {
-        MenuEvent::Preferences => {
-            app.get_or_create_window("settings")
-                .unwrap()
-                .0
-                .show()
-                .unwrap();
-        }
+        MenuEvent::Preferences => match app.get_or_create_window("settings") {
+            Ok((window, _)) => {
+                if let Err(error) = window.show() {
+                    log::error!("Failed to show settings window: {error}");
+                }
+            }
+            Err(error) => log::error!("Failed to create settings window: {error}"),
+        },
         MenuEvent::Close => {
             app.exit(0);
         }

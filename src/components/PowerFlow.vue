@@ -59,12 +59,12 @@ const power = usePower()
           :icon="CloudLightningIcon"
           color="text-yellow-500"
         >
-          {{ formatter.format(power.systemIn + power.efficiencyLoss / 1000) }}
+          {{ formatter.format(power.systemIn + power.efficiencyLoss) }}
         </FlowItem>
 
         <CommonTooltip
           v-if="power.isCharging"
-          :content="`${$t('flow.power_loss')}: ${power.efficiencyLoss}mw`"
+          :content="`${$t('flow.power_loss')}: ${formatter.format(power.efficiencyLoss)}W`"
           as-child
         >
           <Shimmer

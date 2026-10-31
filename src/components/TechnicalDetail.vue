@@ -32,8 +32,11 @@ const power = usePower()
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          <!-- TODO: typing -->
-          {{ (power.maxCapacity / power.designCapacity! * 100).toFixed(1) }}%
+          {{
+            (power.designCapacity ?? 0) > 0
+              ? `${Math.min(power.maxCapacity / power.designCapacity! * 100, 100).toFixed(1)}%`
+              : '—'
+          }}
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="text-xs text-muted-foreground">
@@ -61,19 +64,19 @@ const power = usePower()
     <Card>
       <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle class="text-sm font-medium">
-          Energy
+          {{ $t('energy') }}
         </CardTitle>
         <CloudLightning class="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         <div v-if="!power.isLoading" class="text-2xl font-bold">
-          {{ power.currentCapacity }}mAh
+          {{ power.maxCapacity > 0 ? `${power.currentCapacity}mAh` : '—' }}
         </div>
         <Skeleton v-else class="w-12 h-8" />
         <p class="flex gap-2 text-xs text-muted-foreground">
-          Max Capacity: <span v-if="!power.isLoading">{{
-            power.maxCapacity
-          }}mAh</span>
+          {{ $t('max_capacity') }}: <span v-if="!power.isLoading">{{
+            power.maxCapacity > 0 ? `${power.maxCapacity}mAh` : '—'
+          }}</span>
           <Skeleton v-else class="w-12 h-4" />
         </p>
       </CardContent>

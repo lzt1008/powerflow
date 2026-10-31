@@ -3,5 +3,5 @@
 
 #[tokio::main]
 async fn main() {
-    powerflow_lib::run();
+    mac_power_assistant_lib::run();
 }

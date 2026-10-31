@@ -1,52 +1,46 @@
-# Powerflow
+# Mac电源助手
 
-![Powerflow Screenshot](https://raw.githubusercontent.com/lzt1008/powerflow/assets/screenshot.png)
+Mac电源助手是一款 macOS 菜单栏应用，用于实时查看 Mac 与已连接 iOS 设备的功耗、充放电状态、剩余时间和充电历史。
 
-Powerflow is a macOS application designed to monitor the **power usage** and **charging status** of your devices. With Powerflow, you can gain insights into your device's power consumption.
+## 功能
 
-## Features
+- 实时功耗与电池状态监控
+- Mac 与 iOS 设备切换
+- 系统、屏幕、散热与电池功率分解
+- 充电会话记录、趋势图和 JSON 导出
+- 菜单栏快速状态与独立设置窗口
+- 浅色、深色和系统主题
 
-- 🖥️ **Monitoring**: Monitor your Mac and iOS devices power consumption and charging status in real-time.
-- 📊 **Detailed Insights**: View historical power usage and charging trends.
-- 🚀 **Lightweight and Fast**: Designed with performance in mind for seamless operation.
-
----
-
-## Installation
-
-### Manual Installation
-1. Download the latest `.dmg` file from the [Releases](https://github.com/lzt1008/powerflow/releases) page.
-2. Open the `.dmg` file and drag the Powerflow app to your Applications folder.
-3. If you encounter an error, try the following steps:
-- Open **System Preferences** > **Security & Privacy**.
-- In the **General** tab, you will see a message about Powerflow being blocked.
-- Click **"Open Anyway"**.
-- Confirm the dialog that appears by clicking **"Open"**.
-
-### Install via Homebrew
-
-Open your terminal and run the following command:
+## 开发
 
 ```bash
-brew tap lzt1008/powerflow
-brew install --cask powerflow
+pnpm install
+pnpm tauri dev
 ```
 
-## Contributing
+构建前请运行：
 
-We welcome contributions! Here's how you can help:
+```bash
+pnpm lint
+pnpm exec vue-tsc --noEmit
+cargo fmt --all --check
+cargo clippy --workspace --all-targets
+cargo test --workspace
+pnpm build
+```
 
-1. Fork the repository.
-2. Create a new branch for your feature or bugfix.
-3. Commit your changes and push them to your branch.
-4. Create a pull request for review.
+## 发布
 
-## License
+正式版本只通过本仓库的 [GitHub Releases](https://github.com/cnveteran/powerflow/releases) 发布。版本历史以 Git tag 和 Release 为准，不在仓库中保存源码快照副本。
 
-Powerflow is released under the [MIT License](https://github.com/lzt1008/powerflow/blob/main/LICENSE). Feel free to use, modify, and distribute this software as per the license terms.
+## 作者
 
-## Feedback and Support
+cnveteran
 
-We'd love to hear from you! If you have any feedback, issues, or suggestions, please [open an issue](https://github.com/lzt1008/powerflow/issues) on GitHub
+## 致谢
 
-Thank you for using Powerflow! 🚀
+本项目基于 [The Powerflow Team](https://github.com/lzt1008/powerflow) 的 powerflow 项目二次开发，感谢原作者的开源贡献。
+
+## 许可证
+
+[MIT](LICENSE)

@@ -8,6 +8,7 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+.pnpm-store
 dist
 dist-ssr
 *.local
@@ -27,3 +28,7 @@ target
 .auto-imports
 .env
 db.sqlite
+
+# Local process files and packaged artifacts
+.work
+artifacts

@@ -32,21 +32,28 @@ mod util;
 
 #[tauri::command]
 #[specta::specta]
-fn open_app(app: AppHandle) {
-    let main = app.main_window().unwrap();
-    main.show().unwrap();
-    main.set_focus().unwrap();
+fn open_app(app: AppHandle) -> Result<(), String> {
+    let main = app
+        .main_window()
+        .ok_or_else(|| "main window is unavailable".to_string())?;
+    main.show().map_err(|error| error.to_string())?;
+    main.set_focus().map_err(|error| error.to_string())?;
     app.set_activation_policy(ActivationPolicy::Regular)
-        .unwrap();
-    app.popover_window().unwrap().hide().unwrap();
+        .map_err(|error| error.to_string())?;
+    if let Some(popover) = app.popover_window() {
+        popover.hide().map_err(|error| error.to_string())?;
+    }
+    Ok(())
 }
 
 #[tauri::command]
 #[specta::specta]
-fn open_settings(app: AppHandle) {
-    let settings = app.settings_window().unwrap();
-    settings.show().unwrap();
-    settings.set_focus().unwrap();
+fn open_settings(app: AppHandle) -> Result<(), String> {
+    let settings = app
+        .settings_window()
+        .ok_or_else(|| "settings window is unavailable".to_string())?;
+    settings.show().map_err(|error| error.to_string())?;
+    settings.set_focus().map_err(|error| error.to_string())
 }
 
 #[tauri::command]
@@ -63,9 +70,7 @@ fn get_device_name(
     id: String,
     state: State<DeviceState>,
 ) -> Option<(String, HashSet<InterfaceType>)> {
-    let state = state.read().unwrap();
-    let data = state.get(&id);
-    data.cloned()
+    state.read().ok()?.get(&id).cloned()
 }
 
 #[tauri::command]
@@ -83,8 +88,13 @@ fn switch_theme(theme: Theme, app: AppHandle) {
         Theme::System => None,
     };
     app.webview_windows().values().for_each(|w| unsafe {
-        if let Some(w) = (w.ns_window().unwrap() as *mut NSWindow).as_ref() {
-            w.setAppearance(apprence.as_deref())
+        match w.ns_window() {
+            Ok(window) => {
+                if let Some(window) = (window as *mut NSWindow).as_ref() {
+                    window.setAppearance(apprence.as_deref())
+                }
+            }
+            Err(error) => log::warn!("Unable to apply native window theme: {error}"),
         }
     });
 }
@@ -112,6 +122,19 @@ async fn delete_history_by_id(id: i64, db: State<'_, Pool<Sqlite>>) -> Result<u6
 
 #[tauri::command]
 #[specta::specta]
+async fn export_history_by_id(
+    id: i64,
+    path: String,
+    db: State<'_, Pool<Sqlite>>,
+) -> Result<(), String> {
+    let bytes = database::get_detail_by_id(&db, id).await?;
+    tokio::fs::write(path, bytes)
+        .await
+        .map_err(|error| error.to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 async fn get_all_charging_history(
     db: State<'_, Pool<Sqlite>>,
 ) -> Result<Vec<ChargingHistory>, String> {
@@ -131,7 +154,8 @@ pub fn create_specta() -> tauri_specta::Builder {
             switch_theme,
             get_detail_by_id,
             get_all_charging_history,
-            delete_history_by_id
+            delete_history_by_id,
+            export_history_by_id
         ])
         .events(collect_events![
             DeviceEvent,
@@ -159,7 +183,6 @@ pub fn create_specta() -> tauri_specta::Builder {
 pub fn run() {
     let specta = create_specta();
     let app = tauri::Builder::default()
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(
@@ -179,7 +202,7 @@ pub fn run() {
         .setup(move |app| {
             specta.mount_events(app);
 
-            setup_database(app.handle().clone());
+            setup_database(app.handle().clone())?;
 
             setup_tray_icon(app)?;
             setup_sender_with_events(app);
@@ -187,7 +210,9 @@ pub fn run() {
             setup_device_listener(app.app_handle().clone());
             setup_history_recorder(app.app_handle().clone());
 
-            setup_traffic_light_positioner(app.main_window().unwrap());
+            if let Some(main) = app.main_window() {
+                setup_traffic_light_positioner(main);
+            }
 
             Ok(())
         })
@@ -203,9 +228,14 @@ pub fn run() {
             has_visible_windows,
             ..
         } if !has_visible_windows => {
-            app.main_window().unwrap().show().unwrap();
-            app.set_activation_policy(ActivationPolicy::Regular)
-                .unwrap();
+            if let Some(window) = app.main_window() {
+                if let Err(error) = window.show() {
+                    log::error!("Failed to show main window: {error}");
+                }
+            }
+            if let Err(error) = app.set_activation_policy(ActivationPolicy::Regular) {
+                log::error!("Failed to restore activation policy: {error}");
+            }
         }
         _ => (),
     });
@@ -217,11 +247,15 @@ fn handle_window_event(window: &Window, event: &WindowEvent) {
             WindowEvent::CloseRequested { api, .. } => {
                 api.prevent_close();
 
-                window.hide().unwrap();
-                window
+                if let Err(error) = window.hide() {
+                    log::error!("Failed to hide main window: {error}");
+                }
+                if let Err(error) = window
                     .app_handle()
                     .set_activation_policy(ActivationPolicy::Accessory)
-                    .unwrap();
+                {
+                    log::error!("Failed to update activation policy: {error}");
+                }
             }
             WindowEvent::ThemeChanged(theme) => {
                 println!("Theme changed to: {}", theme);

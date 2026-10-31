@@ -6,8 +6,8 @@ import { createI18n } from 'vue-i18n'
 import '../assets/index.css'
 
 const i18n = createI18n({
-  locale: 'en',
-  fallbackLocale: 'en',
+  locale: 'zh-CN',
+  fallbackLocale: 'zh-CN',
   messages,
 })
 
