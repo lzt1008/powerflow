@@ -9,5 +9,9 @@ export default defineConfig({
   ],
   execute: 'cargo update powerflow tpower',
   sign: true,
-  push: false,
+  push: true,
+  pr: {
+    base: 'main',
+    title: 'chore: release {tag}',
+  },
 })
