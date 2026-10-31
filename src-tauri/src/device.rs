@@ -50,12 +50,16 @@ pub fn start_device_listener() -> mpsc::Receiver<DeviceMessage> {
         let tx = tx.clone();
 
         async_runtime::spawn(async move {
-            tx.send(DeviceMessage {
-                device,
-                action: info.action,
-            })
-            .await
-            .unwrap();
+            if tx
+                .send(DeviceMessage {
+                    device,
+                    action: info.action,
+                })
+                .await
+                .is_err()
+            {
+                log::warn!("Device listener receiver gone, dropping device message");
+            }
             mem::forget(tx);
         });
     }
@@ -90,10 +94,16 @@ pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
                 _ = timer.tick() => {
                     for (device, conn) in devices.iter() {
                         match get_device_ioreg(conn) {
-                            Ok(res) => DevicePowerTickEvent {
-                                udid: device.udid.clone(),
-                                data: NormalizedResource::from(&res),
-                            }.emit(&handle).unwrap(),
+                            Ok(res) => {
+                                if let Err(err) = (DevicePowerTickEvent {
+                                    udid: device.udid.clone(),
+                                    data: NormalizedResource::from(&res),
+                                })
+                                .emit(&handle)
+                                {
+                                    log::warn!("Failed to emit device power tick: {err}");
+                                }
+                            }
                             Err(err) => {
                                 log::error!("Failed to get IORegistry: {err}");
                             }
@@ -103,29 +113,40 @@ pub fn start_device_sender(handle: AppHandle) -> async_runtime::JoinHandle<()> {
                 Some(DeviceMessage { device, action }) = rx.recv() => {
                     match action {
                         Action::Attached => {
-                            // unwrap pair
-                            device.prepare_device().unwrap();
-                            let conn = device.start_service("com.apple.mobile.diagnostics_relay");
+                            if let Err(err) = device.prepare_device() {
+                                log::error!("Failed to prepare device {}: {err}", device.udid);
+                            } else {
+                                let conn =
+                                    device.start_service("com.apple.mobile.diagnostics_relay");
 
-                            DeviceEvent {
-                                udid: device.udid.clone(),
-                                // must call `device.name()` after `device.prepare_device()`
-                                // or name will be empty causing panic
-                                name: device.name(),
-                                interface: device.interface_type,
-                                action,
-                            }.emit(&handle).unwrap();
+                                if let Err(err) = (DeviceEvent {
+                                    udid: device.udid.clone(),
+                                    // must call `device.name()` after `device.prepare_device()`
+                                    // or name will be empty
+                                    name: device.name(),
+                                    interface: device.interface_type,
+                                    action,
+                                })
+                                .emit(&handle)
+                                {
+                                    log::warn!("Failed to emit device event: {err}");
+                                }
 
-                            devices.insert(device, conn);
+                                devices.insert(device, conn);
+                            }
                         },
                         Action::Detached => {
                             log::debug!("Device detached: {}", device.udid);
-                            DeviceEvent {
+                            if let Err(err) = (DeviceEvent {
                                 udid: device.udid.clone(),
                                 name: String::new(),
                                 interface: device.interface_type,
                                 action,
-                            }.emit(&handle).unwrap();
+                            })
+                            .emit(&handle)
+                            {
+                                log::warn!("Failed to emit device event: {err}");
+                            }
                             devices.remove(&device);
                         },
                         _ => ()

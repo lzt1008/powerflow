@@ -60,7 +60,13 @@ pub fn start_sender<R: Runtime>(
     mut rx: mpsc::Receiver<SenderMessage>,
 ) -> async_runtime::JoinHandle<()> {
     let app = app.app_handle().clone();
-    let mut smc_conn = SMCConnection::new("AppleSMC").unwrap();
+    let mut smc_conn = match SMCConnection::new("AppleSMC") {
+        Ok(conn) => conn,
+        Err(err) => {
+            log::error!("Failed to open SMC connection ({err:?}), local power sender disabled");
+            return async_runtime::spawn(async {});
+        }
+    };
 
     let mut timer = time::interval(Duration::from_millis(
         app.pinia()
@@ -81,22 +87,47 @@ pub fn start_sender<R: Runtime>(
             select! {
                 _ = timer.tick() => {
                     let smc = smc_conn.read_sensor();
-                    PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
+                    if let Err(err) = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                         .emit(&app)
-                        .unwrap();
-                    PowerTickEvent {
-                        data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                    }.emit(&app).unwrap();
+                    {
+                        log::warn!("Failed to emit power update: {err}");
+                    }
+                    match get_mac_ioreg() {
+                        Ok(ioreg) => {
+                            if let Err(err) = (PowerTickEvent {
+                                data: (&ioreg, &smc).into(),
+                            })
+                            .emit(&app)
+                            {
+                                log::warn!("Failed to emit power tick: {err}");
+                            }
+                        }
+                        Err(err) => {
+                            log::warn!("Failed to read IORegistry, skipping tick: {err:?}");
+                        }
+                    }
                 }
                 Some(msg) = rx.recv() => match msg {
                     SenderMessage::ImmediateSend => {
                         let smc = smc_conn.read_sensor();
-                        PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
+                        if let Err(err) = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
-                        PowerTickEvent {
-                            data:  (&get_mac_ioreg().unwrap(), &smc).into()
-                        }.emit(&app).unwrap();
+                        {
+                            log::warn!("Failed to emit power update: {err}");
+                        }
+                        match get_mac_ioreg() {
+                            Ok(ioreg) => {
+                                if let Err(err) = (PowerTickEvent {
+                                    data: (&ioreg, &smc).into()
+                                })
+                                .emit(&app) {
+                                    log::warn!("Failed to emit power tick: {err}");
+                                }
+                            }
+                            Err(err) => {
+                                log::warn!("Failed to read IORegistry, skipping tick: {err:?}");
+                            }
+                        }
                     },
                     SenderMessage::ChangeInterval(interval) => {
                         timer = time::interval(if interval < Duration::from_millis(500) {
@@ -108,15 +139,19 @@ pub fn start_sender<R: Runtime>(
                     },
                     SenderMessage::ChangeStatusBarItem(item) => {
                         status_bar_item = item;
-                        PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
+                        if let Err(err) = PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
+                        {
+                            log::warn!("Failed to emit power update: {err}");
+                        }
                     },
                     SenderMessage::StatusBarShowCharging(show) => {
                         show_charging = show;
-                        PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
+                        if let Err(err) = PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
+                        {
+                            log::warn!("Failed to emit power update: {err}");
+                        }
                     }
                 }
             }
@@ -134,7 +169,9 @@ pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
     WindowLoadedEvent::listen(app, move |_| {
         let tx = tx.clone();
         async_runtime::spawn(async move {
-            tx.send(SenderMessage::ImmediateSend).await.unwrap();
+            if let Err(err) = tx.send(SenderMessage::ImmediateSend).await {
+                log::warn!("Failed to queue immediate send: {err}");
+            }
         });
     });
 
@@ -156,7 +193,9 @@ pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
         } {
             let tx = tx.clone();
             async_runtime::spawn(async move {
-                tx.send(msg).await.unwrap();
+                if let Err(err) = tx.send(msg).await {
+                    log::warn!("Failed to queue sender message: {err}");
+                }
             });
         }
     });
