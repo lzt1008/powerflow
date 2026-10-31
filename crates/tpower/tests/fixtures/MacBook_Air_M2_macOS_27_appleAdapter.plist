@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>BatteryData</key>
+	<dict>
+		<key>DesignCapacity</key>
+		<integer>4563</integer>
+		<key>FullChargeCapacity</key>
+		<integer>4427</integer>
+		<key>RemainingCapacity</key>
+		<integer>1461</integer>
+	</dict>
+	<key>CurrentCapacity</key>
+	<integer>34</integer>
+	<key>CycleCount</key>
+	<integer>37</integer>
+	<key>IsCharging</key>
+	<true/>
+	<key>PowerTelemetryData</key>
+	<dict>
+		<key>AdapterEfficiencyLoss</key>
+		<integer>684</integer>
+		<key>BatteryPower</key>
+		<integer>23987</integer>
+		<key>SystemLoad</key>
+		<integer>4230</integer>
+		<key>SystemPowerIn</key>
+		<integer>28217</integer>
+	</dict>
+</dict>
+</plist>

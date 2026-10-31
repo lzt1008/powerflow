@@ -84,9 +84,10 @@ pub fn start_sender<R: Runtime>(
                     PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                         .emit(&app)
                         .unwrap();
-                    PowerTickEvent {
-                        data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                    }.emit(&app).unwrap();
+                    match get_mac_ioreg() {
+                        Ok(io) => PowerTickEvent { data: (&io, &smc).into() }.emit(&app).unwrap(),
+                        Err(error) => log::warn!("failed to read mac ioreg: {error}"),
+                    }
                 }
                 Some(msg) = rx.recv() => match msg {
                     SenderMessage::ImmediateSend => {
@@ -94,9 +95,10 @@ pub fn start_sender<R: Runtime>(
                         PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                             .emit(&app)
                             .unwrap();
-                        PowerTickEvent {
-                            data:  (&get_mac_ioreg().unwrap(), &smc).into()
-                        }.emit(&app).unwrap();
+                        match get_mac_ioreg() {
+                            Ok(io) => PowerTickEvent { data: (&io, &smc).into() }.emit(&app).unwrap(),
+                            Err(error) => log::warn!("failed to read mac ioreg: {error}"),
+                        }
                     },
                     SenderMessage::ChangeInterval(interval) => {
                         timer = time::interval(if interval < Duration::from_millis(500) {
