@@ -37,31 +37,6 @@ jobs:
         with:
           targets: x86_64-apple-darwin,aarch64-apple-darwin
 
-      - name: Tag release commit
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const { version } = require(`${process.env.GITHUB_WORKSPACE}/package.json`);
-            const tag = `v${version}`;
-            const pr = context.payload.pull_request;
-            if (pr.head.ref !== `release/${tag}`) {
-              throw new Error(`Release branch must be release/${tag}`);
-            }
-            const repo = { owner: context.repo.owner, repo: context.repo.repo };
-            try {
-              const { data } = await github.rest.git.getRef({ ...repo, ref: `tags/${tag}` });
-              if (data.object.sha !== pr.merge_commit_sha) {
-                throw new Error(`${tag} already points to a different commit`);
-              }
-            } catch (error) {
-              if (error.status !== 404) throw error;
-              await github.rest.git.createRef({
-                ...repo,
-                ref: `refs/tags/${tag}`,
-                sha: pr.merge_commit_sha,
-              });
-            }
-
       - uses: tauri-apps/tauri-action@v0
         env:
           # https://github.com/tauri-apps/tauri-action/issues/740
