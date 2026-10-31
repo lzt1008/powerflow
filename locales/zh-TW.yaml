@@ -1,4 +1,4 @@
-system_power: 系統用電量
+system_power: 系統功率
 power_flow: 用電狀態
 on_battery: 使用電池
 power_usage: 電池使用狀況
@@ -15,11 +15,11 @@ status:
   charging_power: 供電功率
   offline: 離線
   on_battery: 電池供電
-  system_power: 系統用電量
-  to_full: 已充滿
+  system_power: 系統功率
+  to_full: 後充滿
   to_empty: 電量耗盡
   fully_charged: 完全充滿
-  battery_in: 使用電池
+  battery_in: 電池充電
   power_loss: 耗損
   screen_power: 螢幕
   heatpipe_power: SoC
@@ -29,7 +29,7 @@ flow:
   screen_power: 螢幕功率
   heatpipe_power: SoC功率
   system_total: 系統總功率
-  system_in: 系統输入
+  system_in: 系統輸入
   battery_in: 電池輸入功率
   battery_out: 電池輸出功率
   power_loss: 耗損
@@ -37,7 +37,7 @@ flow:
 settings:
   appearance: 外觀
   theme: 主題
-  theme_desc: 更改 App 外關
+  theme_desc: 更改 App 主題
   theme_light: 淺色
   theme_dark: 深色
   theme_system: 系統
@@ -48,7 +48,7 @@ settings:
   animations_desc: 功率變化動畫平滑效果
   update_and_monitoring: 更新與監控
   update_frequency: 更新週期
-  update_frequency_desc: 電率數據刷新率
+  update_frequency_desc: 功率資料更新頻率
   background_monitoring: 後台運行
   background_monitoring_desc: 在後台運行 App
   status_bar: 選單列
@@ -80,19 +80,19 @@ time_ago_options:
   month_past: 現在|上個月|{n} 個月前
   second_future: 剛剛|{n} 秒後|{n} 秒後
   second_past: 剛剛|{n} 秒前|{n} 秒前
-  short_day_future: '{n} 天前'
+  short_day_future: '{n} 天後'
   short_day_past: '{n} 天前'
-  short_hour_future: '{n} 小時前'
+  short_hour_future: '{n} 小時後'
   short_hour_past: '{n} 小時前'
-  short_minute_future: '{n} 分鐘前'
+  short_minute_future: '{n} 分鐘後'
   short_minute_past: '{n} 分鐘前'
-  short_month_future: '{n} 個月前'
+  short_month_future: '{n} 個月後'
   short_month_past: '{n} 個月前'
-  short_second_future: '{n} 秒前'
+  short_second_future: '{n} 秒後'
   short_second_past: '{n} 秒前'
-  short_week_future: '{n} 週前'
+  short_week_future: '{n} 週後'
   short_week_past: '{n} 週前'
-  short_year_future: '{n} 年前'
+  short_year_future: '{n} 年後'
   short_year_past: '{n} 年前'
   week_future: 現在|下週|{n} 週後
   week_past: 現在|上週|{n} 週前

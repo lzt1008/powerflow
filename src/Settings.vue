@@ -144,6 +144,9 @@ function SettingsSection(props: SettingsSectionProps) {
               <SelectItem value="en">
                 English
               </SelectItem>
+              <SelectItem value="zh-TW">
+                繁體中文
+              </SelectItem>
               <SelectItem value="zh-CN">
                 简体中文
               </SelectItem>
