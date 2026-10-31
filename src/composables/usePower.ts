@@ -107,6 +107,8 @@ events.deviceEvent.listen(({ payload }) => {
   const deviceData = getOrCreateDeviceData(payload.udid)
 
   if (payload.action === 'Attached') {
+    if (payload.name)
+      deviceData.name = payload.name
     deviceData.interface.add(payload.interface)
     deviceData.offline = false
   }
