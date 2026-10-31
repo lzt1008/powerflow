@@ -81,22 +81,36 @@ pub fn start_sender<R: Runtime>(
             select! {
                 _ = timer.tick() => {
                     let smc = smc_conn.read_sensor();
-                    PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
+                    if let Err(e) = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                         .emit(&app)
-                        .unwrap();
-                    PowerTickEvent {
-                        data: (&get_mac_ioreg().unwrap(), &smc).into(),
-                    }.emit(&app).unwrap();
+                    {
+                        log::warn!("failed to emit PowerUpdatedEvent: {e}");
+                    }
+                    match get_mac_ioreg() {
+                        Ok(ioreg) => {
+                            if let Err(e) = (PowerTickEvent { data: (&ioreg, &smc).into() }).emit(&app) {
+                                log::warn!("failed to emit PowerTickEvent: {e}");
+                            }
+                        }
+                        Err(e) => log::warn!("failed to read mac ioreg: {e:?}"),
+                    }
                 }
                 Some(msg) = rx.recv() => match msg {
                     SenderMessage::ImmediateSend => {
                         let smc = smc_conn.read_sensor();
-                        PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
+                        if let Err(e) = PowerUpdatedEvent::new_with(&smc, &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
-                        PowerTickEvent {
-                            data:  (&get_mac_ioreg().unwrap(), &smc).into()
-                        }.emit(&app).unwrap();
+                        {
+                            log::warn!("failed to emit PowerUpdatedEvent: {e}");
+                        }
+                        match get_mac_ioreg() {
+                            Ok(ioreg) => {
+                                if let Err(e) = (PowerTickEvent { data: (&ioreg, &smc).into() }).emit(&app) {
+                                    log::warn!("failed to emit PowerTickEvent: {e}");
+                                }
+                            }
+                            Err(e) => log::warn!("failed to read mac ioreg: {e:?}"),
+                        }
                     },
                     SenderMessage::ChangeInterval(interval) => {
                         timer = time::interval(if interval < Duration::from_millis(500) {
@@ -108,15 +122,19 @@ pub fn start_sender<R: Runtime>(
                     },
                     SenderMessage::ChangeStatusBarItem(item) => {
                         status_bar_item = item;
-                        PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
+                        if let Err(e) = PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
+                        {
+                            log::warn!("failed to emit PowerUpdatedEvent: {e}");
+                        }
                     },
                     SenderMessage::StatusBarShowCharging(show) => {
                         show_charging = show;
-                        PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
+                        if let Err(e) = PowerUpdatedEvent::new_with(&smc_conn.read_sensor(), &status_bar_item, show_charging)
                             .emit(&app)
-                            .unwrap();
+                        {
+                            log::warn!("failed to emit PowerUpdatedEvent: {e}");
+                        }
                     }
                 }
             }
@@ -134,7 +152,9 @@ pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
     WindowLoadedEvent::listen(app, move |_| {
         let tx = tx.clone();
         async_runtime::spawn(async move {
-            tx.send(SenderMessage::ImmediateSend).await.unwrap();
+            if let Err(e) = tx.send(SenderMessage::ImmediateSend).await {
+                log::warn!("failed to send ImmediateSend: {e}");
+            }
         });
     });
 
@@ -156,7 +176,9 @@ pub fn setup_sender_with_events<R: Runtime>(app: &impl Manager<R>) {
         } {
             let tx = tx.clone();
             async_runtime::spawn(async move {
-                tx.send(msg).await.unwrap();
+                if let Err(e) = tx.send(msg).await {
+                    log::warn!("failed to send SenderMessage: {e}");
+                }
             });
         }
     });

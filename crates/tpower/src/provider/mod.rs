@@ -119,6 +119,16 @@ impl Deref for NormalizedResource {
     }
 }
 
+/// Battery charge as a percentage of raw max capacity. Returns 0.0 when either
+/// raw value is missing or max is non-positive, avoiding a 0/0 -> NaN or x/0 ->
+/// inf in the emitted telemetry.
+fn absolute_battery_level(io: &IORegistry) -> f32 {
+    match (io.apple_raw_current_capacity, io.apple_raw_max_capacity) {
+        (Some(current), Some(max)) if max > 0 => current as f32 / max as f32 * 100.,
+        _ => 0.,
+    }
+}
+
 impl From<&IORegistry> for NormalizedResource {
     fn from(io: &IORegistry) -> Self {
         let (system_in, system_load, battery_power, adapter_power, efficiency_loss) =
@@ -136,18 +146,18 @@ impl From<&IORegistry> for NormalizedResource {
 
         Self {
             is_local: false,
-            is_charging: io.is_charging,
-            time_remain: Duration::from_secs(io.time_remaining as u64 * 60),
-            last_update: io.update_time,
+            is_charging: io.is_charging.unwrap_or_default(),
+            time_remain: Duration::from_secs(io.time_remaining.unwrap_or_default() as u64 * 60),
+            last_update: io.update_time.unwrap_or_default(),
             adapter_name: io
                 .adapter_details
                 .name
                 .clone()
                 .or_else(|| io.adapter_details.description.clone()),
-            cycle_count: io.cycle_count,
-            max_capacity: io.apple_raw_max_capacity,
-            design_capacity: io.design_capacity,
-            current_capacity: io.apple_raw_current_capacity,
+            cycle_count: io.cycle_count.unwrap_or_default(),
+            max_capacity: io.apple_raw_max_capacity.unwrap_or_default(),
+            design_capacity: io.design_capacity.unwrap_or_default(),
+            current_capacity: io.apple_raw_current_capacity.unwrap_or_default(),
             data: NormalizedData {
                 system_in,
                 system_load,
@@ -156,11 +166,9 @@ impl From<&IORegistry> for NormalizedResource {
                 efficiency_loss,
                 brightness_power: 0.,
                 heatpipe_power: 0.,
-                battery_level: io.current_capacity,
-                absolute_battery_level: io.apple_raw_current_capacity as f32
-                    / io.apple_raw_max_capacity as f32
-                    * 100.,
-                temperature: io.temperature as f32 / 100.,
+                battery_level: io.current_capacity.unwrap_or_default(),
+                absolute_battery_level: absolute_battery_level(io),
+                temperature: io.temperature.unwrap_or_default() as f32 / 100.,
 
                 adapter_watts: io.adapter_details.watts.unwrap_or_default() as f32,
                 adapter_voltage: io.adapter_details.adapter_voltage.unwrap_or_default() as f32
@@ -175,7 +183,7 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
     fn from((io, smc): (&IORegistry, &SMCPowerData)) -> Self {
         Self {
             is_local: true,
-            last_update: io.update_time,
+            last_update: io.update_time.unwrap_or_default(),
             is_charging: smc.is_charging(),
             time_remain: Duration::from_secs_f32(
                 60.0 * if smc.is_charging() {
@@ -189,10 +197,10 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                 .name
                 .clone()
                 .or_else(|| io.adapter_details.description.clone()),
-            cycle_count: io.cycle_count,
-            max_capacity: io.apple_raw_max_capacity,
-            design_capacity: io.design_capacity,
-            current_capacity: io.apple_raw_current_capacity,
+            cycle_count: io.cycle_count.unwrap_or_default(),
+            max_capacity: io.apple_raw_max_capacity.unwrap_or_default(),
+            design_capacity: io.design_capacity.unwrap_or_default(),
+            current_capacity: io.apple_raw_current_capacity.unwrap_or_default(),
             data: NormalizedData {
                 system_in: smc.delivery_rate,
                 system_load: smc.system_total,
@@ -202,10 +210,8 @@ impl From<(&IORegistry, &SMCPowerData)> for NormalizedResource {
                     .map_or(0.0, |d| d.adapter_efficiency_loss as f32 / 1000.),
                 brightness_power: smc.brightness,
                 heatpipe_power: smc.heatpipe,
-                battery_level: io.current_capacity,
-                absolute_battery_level: io.apple_raw_current_capacity as f32
-                    / io.apple_raw_max_capacity as f32
-                    * 100.,
+                battery_level: io.current_capacity.unwrap_or_default(),
+                absolute_battery_level: absolute_battery_level(io),
                 temperature: smc.temperature,
                 adapter_power: smc.delivery_rate
                     + io.ptd()
@@ -242,7 +248,7 @@ pub fn get_mac_ioreg_dict() -> anyhow::Result<CFDictionary> {
 
 pub fn get_mac_ioreg() -> anyhow::Result<IORegistry> {
     let dic = get_mac_ioreg_dict()?;
-    unsafe { mem::transmute(dict_into::<repr::IORegistry>(dic)) }
+    Ok(dict_into::<repr::IORegistry>(dic)?.into())
 }
 
 #[derive(Debug)]
