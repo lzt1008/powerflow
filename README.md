@@ -1,5 +1,11 @@
 # Powerflow
 
+> [!IMPORTANT]
+> **Powerflow crashes at launch on macOS 27 and is no longer maintained.**
+> **[Download Pythonflow](https://github.com/DigitalN/pythonflow/releases/latest)**, a free,
+> up-to-date rewrite that works on macOS 27 and imports your Powerflow history and settings.
+> It's for Apple silicon Macs and doesn't monitor iPhones or iPads.
+
 ![Powerflow Screenshot](https://raw.githubusercontent.com/lzt1008/powerflow/assets/screenshot.png)
 
 Powerflow is a macOS application designed to monitor the **power usage** and **charging status** of your devices. With Powerflow, you can gain insights into your device's power consumption.
